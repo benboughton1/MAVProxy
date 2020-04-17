@@ -11,9 +11,13 @@ import json
 import socket
 from threading import Thread
 
-from flask import Flask
+from flask import Flask, request
 from werkzeug.serving import make_server
 from MAVProxy.modules.lib import mp_module
+
+import io
+from contextlib import redirect_stdout
+
 
 def mavlink_to_json(msg):
     '''Translate mavlink python messages in json string'''
@@ -52,9 +56,12 @@ class RestServer():
         self.status = None
         self.server = None
 
+        self.f = io.StringIO()
+
     def update_dict(self, mpstate):
         '''We don't have time to waste'''
         self.status = mpstate.status
+        self.mpstate = mpstate
 
     def set_ip_port(self, ip, port):
         '''set ip and port'''
@@ -116,10 +123,24 @@ class RestServer():
 
         return json.dumps(new_dict)
 
+    def request_cmd(self, arg=None):
+        '''Deal with cmd requests'''
+        if request.method == 'GET':
+            return json.dumps({'response': self.f.getvalue().splitlines()})
+
+        if request.method == 'POST':
+            data = request.get_json()
+            with redirect_stdout(self.f):
+                self.mpstate.functions.process_stdin(data["cmd"])
+                time.sleep(1)
+                return json.dumps({'response': self.f.getvalue().splitlines()})
+
     def add_endpoint(self):
         '''Set endpoits'''
         self.app.add_url_rule('/rest/mavlink/<path:arg>', 'rest', self.request)
         self.app.add_url_rule('/rest/mavlink/', 'rest', self.request)
+        self.app.add_url_rule('/rest/cmd/', view_func=self.request_cmd, methods=['POST', 'GET'])
+
 
 class ServerModule(mp_module.MPModule):
     ''' Server Module '''
@@ -127,7 +148,7 @@ class ServerModule(mp_module.MPModule):
         super(ServerModule, self).__init__(mpstate, "restserver", "restserver module")
         # Configure server
         self.rest_server = RestServer()
-
+        m = mpstate
         self.add_command('restserver', self.cmds, \
             "restserver module", ['start', 'stop', 'address 127.0.0.1:4777'])
 
