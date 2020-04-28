@@ -12,6 +12,7 @@ import socket
 from threading import Thread
 
 from flask import Flask, request
+from flask_cors import CORS
 from werkzeug.serving import make_server
 from MAVProxy.modules.lib import mp_module
 
@@ -40,7 +41,8 @@ def mpstatus_to_json(status):
 
 class RestServer():
     '''Rest Server'''
-    def __init__(self):
+
+    def __init__(self, state):
         # Set log level and remove flask output
         import logging
         self.log = logging.getLogger('werkzeug')
@@ -74,6 +76,7 @@ class RestServer():
         '''Stop server'''
         # Set flask
         self.app = Flask('RestServer')
+        CORS(self.app)
         self.add_endpoint()
         # Create a thread to deal with flask
         self.run_thread = Thread(target=self.run)
@@ -94,8 +97,9 @@ class RestServer():
 
     def run(self):
         '''Start app'''
-        self.server = make_server(self.address, self.port, self.app, threaded=True)
-        self.server.serve_forever()
+        with redirect_stdout(self.f):
+            self.server = make_server(self.address, self.port, self.app, threaded=True)
+            self.server.serve_forever()
 
     def request(self, arg=None):
         '''Deal with requests'''
@@ -123,23 +127,40 @@ class RestServer():
 
         return json.dumps(new_dict)
 
-    def request_cmd(self, arg=None):
-        '''Deal with cmd requests'''
+    def request_terminal(self, arg=None):
+        '''Terminal send /ecv'''
+        response_lines = 10
+
         if request.method == 'GET':
-            return json.dumps({'response': self.f.getvalue().splitlines()})
+            args = arg.split('/')
+            if len(args) > 0:
+                response_lines = int(args[0])
+            return json.dumps({'response': self.f.getvalue().splitlines()[-response_lines:]})
 
         if request.method == 'POST':
             data = request.get_json()
-            with redirect_stdout(self.f):
-                self.mpstate.functions.process_stdin(data["cmd"])
-                time.sleep(1)
-                return json.dumps({'response': self.f.getvalue().splitlines()})
+            # with redirect_stdout(self.f):
+            self.mpstate.functions.process_stdin(data["cmd"])
+            return json.dumps({"response": "command received"})
+            #time.sleep(1)
+            #response = {'response': self.f.getvalue().splitlines()[-response_lines:]}
+            return json.dumps(response)
+
+    def request_console(self, arg=None):
+        console_values = self.mpstate.console.values.values
+        console_text = self.mpstate.console.text.text
+
+        response = {'response': {"values": console_values, "text": console_text}}
+        return json.dumps(response)
+
 
     def add_endpoint(self):
         '''Set endpoits'''
         self.app.add_url_rule('/rest/mavlink/<path:arg>', 'rest', self.request)
         self.app.add_url_rule('/rest/mavlink/', 'rest', self.request)
-        self.app.add_url_rule('/rest/cmd/', view_func=self.request_cmd, methods=['POST', 'GET'])
+        self.app.add_url_rule('/rest/terminal/<path:arg>', view_func=self.request_terminal, methods=['GET'])
+        self.app.add_url_rule('/rest/terminal/', view_func=self.request_terminal, methods=['POST'])
+        self.app.add_url_rule('/rest/console', view_func=self.request_console, methods=['GET'])
 
 
 class ServerModule(mp_module.MPModule):
@@ -147,10 +168,10 @@ class ServerModule(mp_module.MPModule):
     def __init__(self, mpstate):
         super(ServerModule, self).__init__(mpstate, "restserver", "restserver module")
         # Configure server
-        self.rest_server = RestServer()
+        self.rest_server = RestServer(self)
         m = mpstate
         self.add_command('restserver', self.cmds, \
-            "restserver module", ['start', 'stop', 'address 127.0.0.1:4777'])
+                         "restserver module", ['start', 'stop', 'address 127.0.0.1:4777'])
 
     def usage(self):
         '''show help on command line options'''
@@ -168,7 +189,7 @@ class ServerModule(mp_module.MPModule):
                 return
             self.rest_server.start()
             print("Rest server running: %s:%s" % \
-                (self.rest_server.address, self.rest_server.port))
+                  (self.rest_server.address, self.rest_server.port))
 
         elif args[0] == "stop":
             if not self.rest_server.running():

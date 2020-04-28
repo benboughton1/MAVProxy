@@ -1,7 +1,7 @@
 import time
 import os
 from MAVProxy.modules.lib import mp_menu
-from MAVProxy.modules.lib.wxconsole_util import Value, Text
+from MAVProxy.modules.lib.wxconsole_util import Value, Text, ValueDict, TextList
 from MAVProxy.modules.lib.wx_loader import wx
 from MAVProxy.modules.lib import win_layout
 
@@ -17,6 +17,12 @@ class ConsoleFrame(wx.Frame):
 
         # values for the status bar
         self.values = {}
+
+        # values for restserver
+        self.values_rest = {}
+
+        # text for restserver
+        self.text_rest = TextList()
 
         self.menu = None
         self.menu_callback = None
@@ -40,7 +46,7 @@ class ConsoleFrame(wx.Frame):
         self.Bind(wx.EVT_IDLE, self.on_idle)
         self.Bind(wx.EVT_TEXT_URL, self.on_text_url)
 
-        self.Show(True)
+        self.Show(True) # comment out to hide console
         self.pending = []
 
     def on_menu(self, event):
@@ -77,6 +83,8 @@ class ConsoleFrame(wx.Frame):
         if now - self.last_layout_send > 1:
             self.last_layout_send = now
             self.state.child_pipe_send.send(win_layout.get_wx_window_layout(self))
+            self.state.child_pipe_send.send(ValueDict(self.values_rest))
+            self.state.child_pipe_send.send(self.text_rest)
 
     def on_timer(self, event):
         state = self.state
@@ -110,8 +118,10 @@ class ConsoleFrame(wx.Frame):
                 value.SetBackgroundColour(obj.bg)
                 value.SetLabel(obj.text)
                 self.panel.Layout()
+                self.values_rest[obj.name] = {"text": obj.text, "fg": obj.fg, "bg": obj.bg, "row": obj.row}
             elif isinstance(obj, Text):
                 '''request to add text to the console'''
+                self.text_rest.add({"text": obj.text, "fg": obj.fg, "bg": obj.bg})
                 self.pending.append(obj)
                 for p in self.pending:
                     # we're scrolled at the bottom

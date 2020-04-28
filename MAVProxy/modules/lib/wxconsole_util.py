@@ -1,3 +1,6 @@
+import datetime
+
+
 class Text():
     '''text to write to console'''
     def __init__(self, text, fg='black', bg='white'):
@@ -13,3 +16,19 @@ class Value():
         self.row = row
         self.fg = fg
         self.bg = bg
+
+
+class ValueDict():
+    def __init__(self, values):
+        self.values = values
+
+
+class TextList():
+    def __init__(self):
+        self.text = []
+
+    def add(self, line):
+        line["time"] = datetime.datetime.now().isoformat()
+        self.text.append(line)
+        # trim to 100 lines
+        self.text = self.text[-100:]

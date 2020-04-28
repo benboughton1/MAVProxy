@@ -6,7 +6,7 @@
 import threading
 import sys, time
 
-from MAVProxy.modules.lib.wxconsole_util import Value, Text
+from MAVProxy.modules.lib.wxconsole_util import Value, Text, ValueDict, TextList
 from MAVProxy.modules.lib import textconsole
 from MAVProxy.modules.lib import win_layout
 from MAVProxy.modules.lib import multiproc
@@ -32,6 +32,9 @@ class MessageConsole(textconsole.SimpleConsole):
         t.daemon = True
         t.start()
 
+        self.values = None
+        self.text = None
+
     def child_task(self):
         '''child process - this holds all the GUI elements'''
         self.parent_pipe_send.close()
@@ -43,7 +46,7 @@ class MessageConsole(textconsole.SimpleConsole):
         app = wx.App(False)
         app.frame = ConsoleFrame(state=self, title=self.title)
         app.frame.SetDoubleBuffered(True)
-        app.frame.Show()
+        #app.frame.Show()
         app.MainLoop()
 
     def watch_thread(self):
@@ -52,7 +55,11 @@ class MessageConsole(textconsole.SimpleConsole):
         try:
             while True:
                 msg = self.parent_pipe_recv.recv()
-                if isinstance(msg, win_layout.WinLayout):
+                if isinstance(msg, ValueDict):
+                    self.values = msg
+                elif isinstance(msg, TextList):
+                    self.text = msg
+                elif isinstance(msg, win_layout.WinLayout):
                     win_layout.set_layout(msg, self.set_layout)
                 elif self.menu_callback is not None:
                     self.menu_callback(msg)
