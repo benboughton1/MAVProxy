@@ -91,7 +91,7 @@ class FTP_OP:
 
 class FTPModule(mp_module.MPModule):
     def __init__(self, mpstate):
-        super(FTPModule, self).__init__(mpstate, "ftp")
+        super(FTPModule, self).__init__(mpstate, "ftp", public=True)
         self.add_command('ftp', self.cmd_ftp, "file transfer",
                          ["<list|get|rm|rmdir|rename|mkdir|crc|cancel|status>",
                           "set (FTPSETTING)",
@@ -111,9 +111,11 @@ class FTPModule(mp_module.MPModule):
         self.last_op = None
         self.fh = None
         self.filename = None
+        self.callback = None
         self.total_size = 0
         self.read_gaps = []
         self.read_gap_times = {}
+        self.last_gap_send = None
         self.read_retries = 0
         self.duplicates = 0
         self.last_read = None
@@ -178,6 +180,10 @@ class FTPModule(mp_module.MPModule):
         self.send(FTP_OP(self.seq, self.session, OP_TerminateSession, 0, 0, 0, 0, None))
         self.fh = None
         self.filename = None
+        if self.callback is not None:
+            # tell caller that the transfer failed
+            self.callback(None)
+            self.callback = None
         self.read_gaps = []
         self.read_gap_times = {}
         self.last_read = None
@@ -234,19 +240,22 @@ class FTPModule(mp_module.MPModule):
         else:
             print('LIST: %s' % op)
 
-    def cmd_get(self, args):
+    def cmd_get(self, args, callback=None):
         '''get file'''
         if len(args) == 0:
             print("Usage: get FILENAME <LOCALNAME>")
             return
+        self.callback = None
         self.terminate_session()
         fname = args[0]
         if len(args) > 1:
             self.filename = args[1]
         else:
             self.filename = os.path.basename(fname)
-        print("Getting %s as %s" % (fname, self.filename))
+        if callback is None or self.ftp_settings.debug > 1:
+            print("Getting %s as %s" % (fname, self.filename))
         self.op_start = time.time()
+        self.callback = callback
         self.read_retries = 0
         self.duplicates = 0
         self.reached_eof = False
@@ -265,7 +274,7 @@ class FTPModule(mp_module.MPModule):
             if self.filename is None:
                 return
             try:
-                if self.filename == '-':
+                if self.callback is not None or self.filename == '-':
                     self.fh = SIO()
                 else:
                     self.fh = open(self.filename, 'wb')
@@ -277,7 +286,8 @@ class FTPModule(mp_module.MPModule):
             self.last_burst_read = time.time()
             self.send(read)
         else:
-            print("Open failed")
+            if self.callback is None or self.ftp_settings.debug > 0:
+                print("ftp open failed")
             self.terminate_session()
 
     def check_read_finished(self):
@@ -286,7 +296,11 @@ class FTPModule(mp_module.MPModule):
             ofs = self.fh.tell()
             dt = time.time() - self.op_start
             rate = (ofs / dt) / 1024.0
-            if self.filename == "-":
+            if self.callback is not None:
+                self.fh.seek(0)
+                self.callback(self.fh)
+                self.callback = None
+            elif self.filename == "-":
                 self.fh.seek(0)
                 if sys.version_info.major < 3:
                     print(self.fh.read())
@@ -367,13 +381,18 @@ class FTPModule(mp_module.MPModule):
             if self.ftp_settings.debug > 0:
                 print("FTP: burst nack: ", op)
             if ecode == ERR_EndOfFile or ecode == 0:
+                if not self.reached_eof and op.offset > self.fh.tell():
+                    # we lost the last part of the burst
+                    if self.ftp_settings.debug > 0:
+                        print("burst lost EOF %u %u" % (self.fh.tell(), op.offset))
+                    return
                 if not self.reached_eof and self.ftp_settings.debug > 0:
                     print("EOF at %u with %u gaps t=%.2f" % (self.fh.tell(), len(self.read_gaps), time.time() - self.op_start))
                 self.reached_eof = True
                 if self.check_read_finished():
                     return
                 self.check_read_send()
-            else:
+            elif self.ftp_settings.debug > 0:
                 print("FTP: burst Nack (ecode:%u): %s" % (ecode, op))
         else:
             print("FTP: burst error: %s" % op)
@@ -650,7 +669,8 @@ class FTPModule(mp_module.MPModule):
         self.send(read)
         self.read_gaps.remove(g)
         self.read_gaps.append(g)
-        self.read_gap_times[g] = time.time()
+        self.last_gap_send = time.time()
+        self.read_gap_times[g] = self.last_gap_send
         self.backlog += 1
 
     def check_read_send(self):
@@ -670,18 +690,40 @@ class FTPModule(mp_module.MPModule):
             if self.backlog > 0:
                 self.backlog -= 1
             self.read_gap_times[g] = 0
-        if self.read_gap_times[g] == 0 and self.backlog < self.ftp_settings.max_backlog:
-            self.send_gap_read(g)
+
+        if self.read_gap_times[g] != 0:
+            # still pending
+            return
+        if not self.reached_eof and self.backlog >= self.ftp_settings.max_backlog:
+            # don't fill queue too far until we have got past the burst
+            return
+        if now - self.last_gap_send < 0.05:
+            # don't send too fast
+            return
+        self.send_gap_read(g)
 
     def idle_task(self):
-        '''check for file gaps'''
+        '''check for file gaps and lost requests'''
+        now = time.time()
+
+        # see if we lost an open reply
+        if self.op_start is not None and now - self.op_start > 2.0 and self.last_op.opcode == OP_OpenFileRO:
+            self.op_start = now
+            if self.ftp_settings.debug > 0:
+                print("FTP: retry open")
+            send_op = self.last_op
+            self.send(FTP_OP(self.seq, self.session, OP_TerminateSession, 0, 0, 0, 0, None))
+            self.session = (self.session + 1) % 256
+            send_op.session = self.session
+            self.send(send_op)
+
         if len(self.read_gaps) == 0 and self.last_burst_read is None and not self.write_wait:
             return
+
         if self.fh is None:
             return
 
         # see if burst read has stalled
-        now = time.time()
         if not self.reached_eof and self.last_burst_read is not None and now - self.last_burst_read > self.ftp_settings.retry_time:
             dt = now - self.last_burst_read
             self.last_burst_read = now
@@ -698,6 +740,7 @@ class FTPModule(mp_module.MPModule):
             if self.ftp_settings.debug > 0:
                 print("FTP: write retry at %u" % self.last_op.offset)
             self.send(self.last_op)
+
 
 def init(mpstate):
     '''initialise module'''

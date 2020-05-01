@@ -7,6 +7,7 @@ log analysis program
 Andrew Tridgell December 2014
 '''
 
+import copy
 import sys
 import time
 import os
@@ -58,6 +59,7 @@ class MEState(object):
               MPSetting('linestyle', str, None, 'linestyle'),
               MPSetting('show_flightmode', bool, True, 'show flightmode'),
               MPSetting('sync_xzoom', bool, True, 'sync X-axis zoom'),
+              MPSetting('sync_xmap', bool, True, 'sync X-axis zoom for map'),
               MPSetting('legend', str, 'upper left', 'legend position'),
               MPSetting('legend2', str, 'upper right', 'legend2 position'),
               MPSetting('title', str, None, 'Graph title'),
@@ -325,6 +327,8 @@ def cmd_graph(args):
         #print("initial: ", last_xlim)
         grui[-1].set_xlim(last_xlim)
 
+map_timelim_pipes = []
+
 def cmd_map(args):
     '''map command'''
     import mavflightview
@@ -340,7 +344,16 @@ def cmd_map(args):
         if len(options.types) > 1:
             options.colour_source='type'
     [path, wp, fen, used_flightmodes, mav_type, instances] = mavflightview.mavflightview_mav(mestate.mlog, options, mestate.flightmode_selections)
-    child = multiproc.Process(target=mavflightview.mavflightview_show, args=[path, wp, fen, used_flightmodes, mav_type, options, instances])
+    global map_timelim_pipes
+    timelim_pipe = multiproc.Pipe()
+    child = multiproc.Process(target=mavflightview.mavflightview_show, args=[path, wp, fen, used_flightmodes, mav_type, options, instances, None, timelim_pipe])
+    map_timelim_pipes.append(timelim_pipe)
+    global last_xlim
+    if last_xlim is not None and mestate.settings.sync_xmap:
+        try:
+            timelim_pipe[0].send(last_xlim)
+        except Exception:
+            pass
     child.start()
     mestate.mlog.rewind()
 
@@ -714,14 +727,27 @@ def loadfile(args):
                                       progress_callback=progress_bar)
     mestate.filename = args
     mestate.mlog = mlog
-    mestate.status.msgs = mlog.messages
+    # note that this is a shallow copy of the messages.
+    # Instance-number-containing messages in mestate.status.msgs may
+    # reference messages in their parent DFReader object which no
+    # longer exist after a rewind() is performed.  Still, this is good
+    # enough for tab-completion to function.
+    mestate.status.msgs = copy.copy(mlog.messages)
     t1 = time.time()
     mestate.console.write("\ndone (%u messages in %.1fs)\n" % (mestate.mlog._count, t1-t0))
+
+    # evaluate graph expressions before finding flightmode list as
+    # flightmode_list does a rewind(), and that clears the DFReader
+    # object.  While we do take a copy of mestate.status.msgs above,
+    # that is a shallow copy, so does not allow
+    # DFMessage.parent.messages to function, which is vital for
+    # instance-number-indexing to work - and the graph expression
+    # evaluation requires that to function.
+    load_graphs()
 
     global flightmodes
     flightmodes = mlog.flightmode_list()
 
-    load_graphs()
     setup_menus()
 
 def process_stdin(line):
@@ -793,6 +819,14 @@ def main_loop():
                         if j not in remlist:
                             new_grui.append(grui[j])
                     grui = new_grui
+                if mestate.settings.sync_xmap:
+                    remlist = []
+                    global map_timelim_pipes
+                    for p in map_timelim_pipes[:]:
+                        try:
+                            p[0].send(xlim)
+                        except Exception:
+                            map_timelim_pipes.remove(p)
                 break
 
         time.sleep(0.1)
