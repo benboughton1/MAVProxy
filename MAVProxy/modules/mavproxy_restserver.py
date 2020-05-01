@@ -29,6 +29,7 @@ def mavlink_to_json(msg):
     ret = ret[0:-2] + '}'
     return ret
 
+
 def mpstatus_to_json(status):
     '''Translate MPStatus in json string'''
     msg_keys = list(status.msgs.keys())
@@ -39,11 +40,12 @@ def mpstatus_to_json(status):
     data += '}'
     return data
 
+
 class RestServer():
     '''Rest Server'''
 
     def __init__(self, state):
-        # Set log level and remove flask output
+        # Set log level and remove flask output - Uncomment these lines to hide server log
         import logging
         self.log = logging.getLogger('werkzeug')
         self.log.setLevel(logging.ERROR)
@@ -59,6 +61,7 @@ class RestServer():
         self.server = None
 
         self.f = io.StringIO()
+        self.state = state
 
     def update_dict(self, mpstate):
         '''We don't have time to waste'''
@@ -128,48 +131,57 @@ class RestServer():
         return json.dumps(new_dict)
 
     def request_terminal(self, arg=None):
-        '''Terminal send /ecv'''
         response_lines = 10
+        args = arg.split('/')
+        if len(args) > 0:
+            response_lines = int(args[0])
+        return json.dumps({'response': self.f.getvalue().splitlines()[-response_lines:]})
 
-        if request.method == 'GET':
-            args = arg.split('/')
-            if len(args) > 0:
-                response_lines = int(args[0])
-            return json.dumps({'response': self.f.getvalue().splitlines()[-response_lines:]})
-
-        if request.method == 'POST':
-            data = request.get_json()
-            # with redirect_stdout(self.f):
-            self.mpstate.functions.process_stdin(data["cmd"])
-            return json.dumps({"response": "command received"})
-            #time.sleep(1)
-            #response = {'response': self.f.getvalue().splitlines()[-response_lines:]}
-            return json.dumps(response)
+    def request_cmd(self):
+        data = request.get_json()
+        self.mpstate.functions.process_stdin(data["cmd"])
+        return json.dumps({"response": "command received"})
 
     def request_console(self, arg=None):
         console_values = self.mpstate.console.values.values
         console_text = self.mpstate.console.text.text
-
-        response = {'response': {"values": console_values, "text": console_text}}
+        response = {'response': {"values": console_values, "text": console_text, "position": {
+            'lat': self.state.lat,
+            'lon': self.state.lon
+        }}}
         return json.dumps(response)
 
+    def request_waypoints(self):
+        mission_list = self.mpstate.module('wp').wploader.view_list()
 
     def add_endpoint(self):
         '''Set endpoits'''
         self.app.add_url_rule('/rest/mavlink/<path:arg>', 'rest', self.request)
         self.app.add_url_rule('/rest/mavlink/', 'rest', self.request)
         self.app.add_url_rule('/rest/terminal/<path:arg>', view_func=self.request_terminal, methods=['GET'])
-        self.app.add_url_rule('/rest/terminal/', view_func=self.request_terminal, methods=['POST'])
+        self.app.add_url_rule('/rest/cmd', view_func=self.request_cmd, methods=['POST'])
         self.app.add_url_rule('/rest/console', view_func=self.request_console, methods=['GET'])
 
 
 class ServerModule(mp_module.MPModule):
     ''' Server Module '''
+
     def __init__(self, mpstate):
         super(ServerModule, self).__init__(mpstate, "restserver", "restserver module")
         # Configure server
         self.rest_server = RestServer(self)
         m = mpstate
+
+        self.lat = None
+        self.lon = None
+        self.alt = None
+        self.speed = None
+        self.airspeed = None
+        self.groundspeed = None
+        self.heading = 0
+        self.wp_change_time = 0
+        self.fence_change_time = 0
+
         self.add_command('restserver', self.cmds, \
                          "restserver module", ['start', 'stop', 'address 127.0.0.1:4777'])
 
@@ -221,6 +233,19 @@ class ServerModule(mp_module.MPModule):
         '''Stop and kill everything before finishing'''
         self.rest_server.stop()
         pass
+
+    def mavlink_packet(self, m):
+        """handle an incoming mavlink packet"""
+        mtype = m.get_type()
+        if mtype == 'GPS_RAW':
+            (self.lat, self.lon) = (m.lat, m.lon)
+        elif mtype == 'GPS_RAW_INT':
+            (self.lat, self.lon) = (m.lat / 1.0e7, m.lon / 1.0e7)
+        elif mtype == "VFR_HUD":
+            self.heading = m.heading
+            self.alt = m.alt
+            self.airspeed = m.airspeed
+            self.groundspeed = m.groundspeed
 
 def init(mpstate):
     '''initialise module'''
