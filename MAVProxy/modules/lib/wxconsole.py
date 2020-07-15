@@ -6,7 +6,7 @@
 import threading
 import sys, time
 
-from MAVProxy.modules.lib.wxconsole_util import Value, Text, ValueDict, TextList
+from MAVProxy.modules.lib.wxconsole_util import Value, Text
 from MAVProxy.modules.lib import textconsole
 from MAVProxy.modules.lib import win_layout
 from MAVProxy.modules.lib import multiproc
@@ -55,11 +55,7 @@ class MessageConsole(textconsole.SimpleConsole):
         try:
             while True:
                 msg = self.parent_pipe_recv.recv()
-                if isinstance(msg, ValueDict):
-                    self.values = msg
-                elif isinstance(msg, TextList):
-                    self.text = msg
-                elif isinstance(msg, win_layout.WinLayout):
+                if isinstance(msg, win_layout.WinLayout):
                     win_layout.set_layout(msg, self.set_layout)
                 elif self.menu_callback is not None:
                     self.menu_callback(msg)

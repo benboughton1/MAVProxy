@@ -6,18 +6,29 @@ Patrick Jose Pereira
 April 2018
 '''
 
+import os
 import time
 import json
 import socket
 from threading import Thread
 
 from flask import Flask, request
+
+from flask import flash, redirect, url_for
+from werkzeug.utils import secure_filename
+UPLOAD_FOLDER = '.'
+ALLOWED_EXTENSIONS = {'txt'}
+
 from flask_cors import CORS
 from werkzeug.serving import make_server
 from MAVProxy.modules.lib import mp_module
 
 import io
 from contextlib import redirect_stdout
+
+
+UPLOAD_FOLDER = '/path/to/the/uploads'
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
 
 def mavlink_to_json(msg):
@@ -41,6 +52,10 @@ def mpstatus_to_json(status):
     return data
 
 
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 class RestServer():
     '''Rest Server'''
 
@@ -54,7 +69,7 @@ class RestServer():
         self.app = None
         self.run_thread = None
         self.address = 'localhost'
-        self.port = 5000
+        self.port = 5001
 
         # Save status
         self.status = None
@@ -84,6 +99,10 @@ class RestServer():
         # Create a thread to deal with flask
         self.run_thread = Thread(target=self.run)
         self.run_thread.start()
+
+        self.app.secret_key = '123'
+        self.app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 
     def running(self):
         '''If app is valid, thread and server are running'''
@@ -143,16 +162,46 @@ class RestServer():
         return json.dumps({"response": "command received"})
 
     def request_console(self, arg=None):
+        try:
+            status_dict = json.loads(mpstatus_to_json(self.status))
+        except Exception as e:
+            print(e)
+            return
         console_values = self.mpstate.console.values.values
         console_text = self.mpstate.console.text.text
-        response = {'response': {"values": console_values, "text": console_text, "position": {
-            'lat': self.state.lat,
-            'lon': self.state.lon
-        }}}
+        response = {
+            'response': {
+            "values": console_values,
+            "text": console_text,
+            "mpstatus": {
+                "armed": self.mpstate.status.armed,
+                "HEARTBEAT": status_dict['HEARTBEAT'],
+                "GLOBAL_POSITION_INT": status_dict['GLOBAL_POSITION_INT'],
+                "GPS_RAW_INT": status_dict['GPS_RAW_INT'],
+                "VFR_HUD": status_dict['VFR_HUD'],
+                "MISSION_CURRENT": status_dict['MISSION_CURRENT']
+                }
+            }
+        }
         return json.dumps(response)
 
     def request_waypoints(self):
         mission_list = self.mpstate.module('wp').wploader.view_list()
+
+    def request_mission(self):
+        if request.method == 'POST':
+            data = request.get_json()
+            f = open("mission.txt", "w")
+            f.write('QGC WPL 110\n')
+            try:
+                for line in data["mission"]:
+                    f.write(line.replace(' ', '\t') + '\n')
+            except Exception as e:
+                print(e)
+                print(data)
+            f.close()
+            self.mpstate.functions.process_stdin('wp load mission.txt')
+            return json.dumps({'response': 'mission accepted'})
 
     def add_endpoint(self):
         '''Set endpoits'''
@@ -161,6 +210,8 @@ class RestServer():
         self.app.add_url_rule('/rest/terminal/<path:arg>', view_func=self.request_terminal, methods=['GET'])
         self.app.add_url_rule('/rest/cmd', view_func=self.request_cmd, methods=['POST'])
         self.app.add_url_rule('/rest/console', view_func=self.request_console, methods=['GET'])
+        self.app.add_url_rule('/rest/mission', view_func=self.request_mission, methods=['POST'])
+
 
 
 class ServerModule(mp_module.MPModule):
@@ -172,15 +223,15 @@ class ServerModule(mp_module.MPModule):
         self.rest_server = RestServer(self)
         m = mpstate
 
-        self.lat = None
-        self.lon = None
-        self.alt = None
-        self.speed = None
-        self.airspeed = None
-        self.groundspeed = None
-        self.heading = 0
-        self.wp_change_time = 0
-        self.fence_change_time = 0
+        # self.lat = None
+        # self.lon = None
+        # self.alt = None
+        # self.speed = None
+        # self.airspeed = None
+        # self.groundspeed = None
+        # self.heading = 0
+        # self.wp_change_time = 0
+        # self.fence_change_time = 0
 
         self.add_command('restserver', self.cmds, \
                          "restserver module", ['start', 'stop', 'address 127.0.0.1:4777'])
@@ -236,16 +287,17 @@ class ServerModule(mp_module.MPModule):
 
     def mavlink_packet(self, m):
         """handle an incoming mavlink packet"""
-        mtype = m.get_type()
-        if mtype == 'GPS_RAW':
-            (self.lat, self.lon) = (m.lat, m.lon)
-        elif mtype == 'GPS_RAW_INT':
-            (self.lat, self.lon) = (m.lat / 1.0e7, m.lon / 1.0e7)
-        elif mtype == "VFR_HUD":
-            self.heading = m.heading
-            self.alt = m.alt
-            self.airspeed = m.airspeed
-            self.groundspeed = m.groundspeed
+
+        # mtype = m.get_type()
+        # if mtype == 'GPS_RAW':
+        #    (self.lat, self.lon) = (m.lat, m.lon)
+        # elif mtype == 'GPS_RAW_INT':
+        #     (self.lat, self.lon) = (m.lat / 1.0e7, m.lon / 1.0e7)
+        # elif mtype == "VFR_HUD":
+        #     self.heading = m.heading
+        #     self.alt = m.alt
+        #     self.airspeed = m.airspeed
+        #     self.groundspeed = m.groundspeed
 
 def init(mpstate):
     '''initialise module'''
