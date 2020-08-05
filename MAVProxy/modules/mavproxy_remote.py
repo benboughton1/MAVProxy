@@ -25,6 +25,30 @@ from MAVProxy.modules.lib import mp_settings
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
+import serial
+
+
+def nmea_to_json(line):
+        split = line.split('*')
+            data = split[0].split(',')
+                if data[0] == '$PDLM1':
+                    return {
+                            'array_length': 1,
+                            'time': data[1],
+                            'hcp_conductivity': float(data[2]),
+                            'hcp_inphase': float(data[3]),
+                            'prp_conductivity': float(data[4]),
+                            'prp_inphase': float(data[5])
+                            }
+                
+                if data[0] == '$PDLMA':
+                    return {
+                            'voltage': float(data[1]),
+                            'temperature': float(data[2]),
+                            'pitch': float(data[3]),
+                            'roll': float(data[4])
+                            }
+
 def mavlink_to_dict(msg):
     ret = {}
     for fieldname in msg._fieldnames:
@@ -186,6 +210,7 @@ class Remote(mp_module.MPModule):
 
         self.mav_ack_alerts = MavAckAlerts(self)
 
+        self.em_connection = None
 
         self.remote_settings = mp_settings.MPSettings(
             [('verbose', bool, False),
@@ -342,6 +367,14 @@ class Remote(mp_module.MPModule):
                 self.update_direct_command(direct_command['id'], 1)
                 self.direct_command_queue.append(direct_command['id'])
 
+    
+    def check_em_conneciton():
+        pass
+
+    def em_collect();
+        pass
+
+
     def comm(self):
         status_dict = json.loads(mpstatus_to_json(self.mpstate.status))
         lat = int(status_dict['GPS_RAW_INT']['lat']) / 1.0e7
@@ -438,6 +471,12 @@ class Remote(mp_module.MPModule):
 
         # check to see if any active alerts have expired
         self.mpstate.console.server_alerts.check_timeout();
+
+        # em data
+        self.check_em_connection()
+        if self.em:
+            self.em_collect()
+
 
     def mavlink_packet(self, m):
         '''handle mavlink packets'''
