@@ -368,7 +368,7 @@ class Remote(mp_module.MPModule):
                 self.update_direct_command(direct_command['id'], 1)
                 self.direct_command_queue.append(direct_command['id'])
 
-    def check_em_conneciton(self):
+    def check_em_connection(self):
         pass
 
     def em_collect(self):
@@ -474,12 +474,13 @@ class Remote(mp_module.MPModule):
             self.direct_command_rover()
 
         # check to see if any active alerts have expired
-        self.mpstate.console.server_alerts.check_timeout();
+        self.mpstate.console.server_alerts.check_timeout()
 
         # em data
         self.check_em_connection()
-        if self.em:
-            self.em_collect()
+        if self.em_connection:
+            if self.em_connection.is_open():
+                self.em_collect()
 
     def mavlink_packet(self, m):
         '''handle mavlink packets'''
