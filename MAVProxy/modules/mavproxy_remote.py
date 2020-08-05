@@ -165,6 +165,11 @@ class Remote(mp_module.MPModule):
 
         self.comm_interval = 10  # seconds
         self.comm_start = False
+        self.api_url = None
+        self.username = None
+        self.password = None
+        self.vehicle_server_id = None
+
         self.last_comm = time.time()
 
         # self.status_callcount = 0
@@ -181,7 +186,6 @@ class Remote(mp_module.MPModule):
 
         self.mav_ack_alerts = MavAckAlerts(self)
 
-        self.vehicle_server_id = 1
 
         self.remote_settings = mp_settings.MPSettings(
             [('verbose', bool, False),
@@ -200,7 +204,17 @@ class Remote(mp_module.MPModule):
             print(self.usage())
         elif args[0] == "comm":
             self.comm()
+            self.api_url = args[1]
+            self.username = args[2]
+            self.password = args[3]
+            self.vehicle_server_id = int(args[4])
         elif args[0] == "comm_start":
+            # TODO: type check all arguments
+            self.api_url = args[1]
+            self.username = args[2]
+            self.password = args[3]
+            self.vehicle_server_id = int(args[4])
+            self.comm_interval = int(args[5])
             self.comm_start = True
         elif args[0] == "comm_stop":
             self.comm_start = False
@@ -215,8 +229,8 @@ class Remote(mp_module.MPModule):
 
 
     def download_mission_file(self, job, mission):
-        url = f'http://127.0.0.1:8000/jobs/{job}/missions/{mission}/text_file/'
-        response = requests.get(url, auth=('ben', 'ben'))
+        url = f'{self.api_url}/jobs/{job}/missions/{mission}/text_file/'
+        response = requests.get(url, auth=(self.username, self.password))
         if response.status_code == 200:
             with open('mission.txt', 'wb') as f:
                 f.write(response.content)
@@ -310,8 +324,8 @@ class Remote(mp_module.MPModule):
         if status in [2, 3, 4]:
             data["time_vehicle_finish"] = datetime.datetime.utcnow().isoformat()
 
-        url = f'http://127.0.0.1:8000/vehicles/{self.vehicle_server_id}/mavproxy_commands/{direct_command_pk}/'
-        r = requests.patch(url, auth=('ben', 'ben'), json=data)
+        url = f'{self.api_url}/vehicles/{self.vehicle_server_id}/mavproxy_commands/{direct_command_pk}/'
+        r = requests.patch(url, auth=(self.username, self.password), json=data)
         print(r.text)
 
     def read_direct_commands(self, direct_commands):
@@ -343,14 +357,15 @@ class Remote(mp_module.MPModule):
             "position": position,
             "heading": heading,
             "speed": speed_kmh,
-            "packets": 100,
+            "packets": 0,
             "console_texts": text_to_send,
             "parameters": params_to_send,
             "mpstats": mpstats_to_send,
+            "datapoints": []
         }
 
-        r = requests.post('http://127.0.0.1:8000/vehicles/1/heartbeats/',
-                          auth=('ben', 'ben'),
+        r = requests.post(f'{self.api_url}/vehicles/{self.vehicle_server_id}/heartbeats/',
+                          auth=(self.username, self.password),
                           json=data
                           )
 
