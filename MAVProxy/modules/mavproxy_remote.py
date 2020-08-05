@@ -23,31 +23,33 @@ from MAVProxy.modules.lib import mp_util
 from MAVProxy.modules.lib import mp_settings
 
 import pprint
+
 pp = pprint.PrettyPrinter(indent=4)
 
 import serial
 
 
 def nmea_to_json(line):
-        split = line.split('*')
-            data = split[0].split(',')
-                if data[0] == '$PDLM1':
-                    return {
-                            'array_length': 1,
-                            'time': data[1],
-                            'hcp_conductivity': float(data[2]),
-                            'hcp_inphase': float(data[3]),
-                            'prp_conductivity': float(data[4]),
-                            'prp_inphase': float(data[5])
-                            }
-                
-                if data[0] == '$PDLMA':
-                    return {
-                            'voltage': float(data[1]),
-                            'temperature': float(data[2]),
-                            'pitch': float(data[3]),
-                            'roll': float(data[4])
-                            }
+    split = line.split('*')
+    data = split[0].split(',')
+    if data[0] == '$PDLM1':
+        return {
+            'array_length': 1,
+            'time': data[1],
+            'hcp_conductivity': float(data[2]),
+            'hcp_inphase': float(data[3]),
+            'prp_conductivity': float(data[4]),
+            'prp_inphase': float(data[5])
+        }
+
+    if data[0] == '$PDLMA':
+        return {
+            'voltage': float(data[1]),
+            'temperature': float(data[2]),
+            'pitch': float(data[3]),
+            'roll': float(data[4])
+        }
+
 
 def mavlink_to_dict(msg):
     ret = {}
@@ -139,6 +141,7 @@ class ServerAlerts():
         for alert in list(self.active):
             if now > alert['finish_time']:
                 self.active.remove(alert)
+
 
 class TextList():
     def __init__(self):
@@ -256,7 +259,6 @@ class Remote(mp_module.MPModule):
         else:
             print(self.usage())
 
-
     def download_mission_file(self, job, mission):
         url = f'{self.api_url}/jobs/{job}/missions/{mission}/text_file/'
         response = requests.get(url, auth=(self.username, self.password))
@@ -266,7 +268,6 @@ class Remote(mp_module.MPModule):
             self.console.writeln('Mission download successful')
         else:
             self.console.writeln(f'Mission download fail. Server status: {response.status_code}')
-
 
     def is_armed(self):
         if self.mpstate.status.armed == 128:
@@ -367,13 +368,11 @@ class Remote(mp_module.MPModule):
                 self.update_direct_command(direct_command['id'], 1)
                 self.direct_command_queue.append(direct_command['id'])
 
-    
-    def check_em_conneciton():
+    def check_em_conneciton(self):
         pass
 
-    def em_collect();
+    def em_collect(self):
         pass
-
 
     def comm(self):
         status_dict = json.loads(mpstatus_to_json(self.mpstate.status))
@@ -460,7 +459,6 @@ class Remote(mp_module.MPModule):
                 'mav_cmd_name': mav_cmd_def['mav_cmd_name']
             }, mav_cmd_def['timeout'])
 
-
     def idle_task(self):
         '''called rapidly by mavproxy'''
 
@@ -482,7 +480,6 @@ class Remote(mp_module.MPModule):
         self.check_em_connection()
         if self.em:
             self.em_collect()
-
 
     def mavlink_packet(self, m):
         '''handle mavlink packets'''
