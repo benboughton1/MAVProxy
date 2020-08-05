@@ -215,7 +215,11 @@ class Remote(mp_module.MPModule):
             self.password = args[3]
             self.vehicle_server_id = int(args[4])
             self.comm_interval = int(args[5])
-            self.comm_start = True
+            try:
+                time.sleep(args[6])
+                self.comm_start = True
+            except:
+                self.comm_start = True
         elif args[0] == "comm_stop":
             self.comm_start = False
         elif args[0] == "set_comm_interval":
@@ -369,7 +373,7 @@ class Remote(mp_module.MPModule):
                           json=data
                           )
 
-        if r.status_code == 201:
+        if r.status_code == 201 or r.status_code == 200:
             # update sent mpstats & params
             self.status_text_sent += text_to_save
             for param in params_to_send:
