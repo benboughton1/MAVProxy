@@ -347,8 +347,10 @@ class Remote(mp_module.MPModule):
         lat = int(status_dict['GPS_RAW_INT']['lat']) / 1.0e7
         lon = int(status_dict['GPS_RAW_INT']['lon']) / 1.0e7
         position = f'POINT({str(lat)} {str(lon)})'
-        # fix_type = status_dict['GPS_RAW_INT']['fix_type']
-        # sats_visible = status_dict['GPS_RAW_INT']['satellites_visible']
+        fix_type = status_dict['GPS_RAW_INT']['fix_type']
+        sats_visible = status_dict['GPS_RAW_INT']['satellites_visible']
+        system_status = status_dict['HEARTBEAT']['system_status']
+        custom_mode = status_dict['HEARTBEAT']['custom_mode']
         heading = status_dict['VFR_HUD']['heading']
         speed_kmh = float(status_dict['VFR_HUD']['groundspeed']) * 3.6
         text_to_save, text_to_send = self.console_text_to_send()
@@ -362,6 +364,10 @@ class Remote(mp_module.MPModule):
             "heading": heading,
             "speed": speed_kmh,
             "packets": 0,
+            "fix_type": fix_type,
+            "sats_visible": sats_visible,
+            "system_status": system_status,
+            "custom_mode": custom_mode,
             "console_texts": text_to_send,
             "parameters": params_to_send,
             "mpstats": mpstats_to_send,
