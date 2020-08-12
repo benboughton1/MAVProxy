@@ -17,6 +17,9 @@ import time
 import datetime
 import requests
 import threading
+import serial
+
+import threading
 
 from MAVProxy.modules.lib import mp_module
 from MAVProxy.modules.lib import mp_util
@@ -25,8 +28,6 @@ from MAVProxy.modules.lib import mp_settings
 import pprint
 
 pp = pprint.PrettyPrinter(indent=4)
-
-import serial
 
 
 def nmea_to_json(line):
@@ -60,7 +61,8 @@ def mavlink_to_dict(msg):
 
 
 def mavlink_to_json(msg):
-    '''Translate mavlink python messages in json string - from restserver module'''
+    '''Translate mavlink python messages in json string
+    - from restserver module'''
     ret = '\"%s\": {' % msg._type
     for fieldname in msg._fieldnames:
         data = getattr(msg, fieldname)
@@ -197,7 +199,20 @@ class Remote(mp_module.MPModule):
         self.password = None
         self.vehicle_server_id = None
 
+        self.em_enabled = False
+        self.em_file = None
+        self.em_thread = False
+        self.em_dataset_id = None
+
+        self.rand_enabled = False
+        self.rand_file = None
+        self.rand_thread = False
+        self.rand_dataset_id = None
+
+        self.datapoints = [];
+
         self.last_comm = time.time()
+        self.last_em_try = time.time()
 
         # self.status_callcount = 0
         self.packets_mytarget = 0
@@ -244,9 +259,23 @@ class Remote(mp_module.MPModule):
             self.vehicle_server_id = int(args[4])
             self.comm_interval = int(args[5])
             try:
+                on_at_start = args[7].split(',')
+                for x in on_at_start:
+                    details = x.split('|')
+                    if details[0] == 'em':
+                        print('Enabling EM')
+                        self.em_enabled = True
+                        self.em_dataset_id = int(details[1])
+                    if details[0] == 'rand':
+                        print('Enabling Random NUmber Dataset')
+                        self.rand_enabled = True
+                        self.rand_dataset_id = int(details[1])
+            except Exception as e:
+                pass
+            try:
                 time.sleep(args[6])
                 self.comm_start = True
-            except:
+            except Exception as e:
                 self.comm_start = True
         elif args[0] == "comm_stop":
             self.comm_start = False
@@ -305,7 +334,7 @@ class Remote(mp_module.MPModule):
                 key__ = f'{key}__{key_}'
                 try:
                     existing = self.mpstats_last_sent[key__]
-                except:
+                except Exception as e:
                     existing = None
 
                 if existing != value_:
@@ -323,7 +352,7 @@ class Remote(mp_module.MPModule):
         for key, value in param.items():
             try:
                 existing = self.params_last_sent[key]
-            except:
+            except Exception as e:
                 existing = None
 
             if existing != value:
@@ -345,9 +374,9 @@ class Remote(mp_module.MPModule):
             4. command executed - timeout without match
         '''
         data = {}
-        if mav_status != None:
+        if mav_status is not None:
             data['mav_status'] = mav_status
-        if status != None:
+        if status is not None:
             data['status'] = status
         if status == 1:
             data["time_vehicle_start"] = datetime.datetime.utcnow().isoformat()
@@ -360,7 +389,8 @@ class Remote(mp_module.MPModule):
 
     def read_direct_commands(self, direct_commands):
         '''
-        Reads commands send from server, updates command dict puts them in queue
+        Reads commands send from server,
+        updates command dict puts them in queue
         '''
         for direct_command in direct_commands:
             self.direct_commands[direct_command['id']] = direct_command
@@ -371,23 +401,98 @@ class Remote(mp_module.MPModule):
     def check_em_connection(self):
         pass
 
-    def em_collect(self):
-        pass
+
+    while True:
+        # generate random number and write to datastore and append to datapoints to send
+    
+
+    def em_connect(self):
+        connection = serial.Serial('/dev/ttyUSB0', 9600, timeout=2)
+        connection.write(b'%')
+        self.em_file = f'em_{datetime.datetime.utcnow().replace(microsecond=0).isoformat()}'
+
+        count = 0
+
+        while True:
+            try:
+                line1 = connection.readline().decode('utf-8')
+                line2 = connection.readline().decode('utf-8')
+                if '$' not in line1:
+                    print('$ not line line 1')
+                    connection.write(b'%')
+                    time.sleep(1)
+                    pass
+                else:
+                    json_data1 = nmea_to_json(line1)
+                    json_data2 = nmea_to_json(line2)
+                    part_line = {**json_data1, **json_data2}
+                    part_line['utc_datetime'] = datetime.datetime.utcnow().replace(microsecond=0).isoformat()
+                    full_line = part_line
+                    #try:
+                    status_dict = json.loads(mpstatus_to_json(self.mpstate.status))
+                    gps = status_dict['GPS_RAW_INT']
+                    lat = int(gps['lat']) / 1.0e7
+                    lon = int(gps['lon']) / 1.0e7
+                    full_line['lat'] = lat
+                    full_line['lon'] = lon 
+                    full_line['sats_visible'] = int(gps['satellites_visible'])
+                    full_line['sat_fix'] = int(gps['fix_type'])
+                    if int(gps['fix_type']) > 1:
+                        geom = f'POINT({str(lat)} {str(lon)})'                         
+                        self.datapoints.append({'dataset': self.em_dataset_id, 'position': geom, 'data': full_line})
+                    f = open(f'/home/pi/datastore/{self.em_file}.txt', 'a')
+                    f.write(json.dumps(full_line)+'\n')
+                    f.close()
+                    count = 0
+                    #time.sleep(1)
+            except Exception as e:
+                print('Problem accessing EM serial - this may resolve itself', count)
+                print(e)
+                count = count + 1
+                if count == 10:
+                    print('10 error in row - reconnect')
+                    break
+            time.sleep(0.2)
+
+        connection.close()
+        self.em_thread = False 
 
     def comm(self):
         status_dict = json.loads(mpstatus_to_json(self.mpstate.status))
-        lat = int(status_dict['GPS_RAW_INT']['lat']) / 1.0e7
-        lon = int(status_dict['GPS_RAW_INT']['lon']) / 1.0e7
-        position = f'POINT({str(lat)} {str(lon)})'
-        fix_type = status_dict['GPS_RAW_INT']['fix_type']
-        sats_visible = status_dict['GPS_RAW_INT']['satellites_visible']
-        system_status = status_dict['HEARTBEAT']['system_status']
-        custom_mode = status_dict['HEARTBEAT']['custom_mode']
-        heading = status_dict['VFR_HUD']['heading']
-        speed_kmh = float(status_dict['VFR_HUD']['groundspeed']) * 3.6
+        try:
+            lat = int(status_dict['GPS_RAW_INT']['lat']) / 1.0e7
+            lon = int(status_dict['GPS_RAW_INT']['lon']) / 1.0e7
+            position = f'POINT({str(lat)} {str(lon)})'
+            fix_type = status_dict['GPS_RAW_INT']['fix_type']
+            sats_visible = status_dict['GPS_RAW_INT']['satellites_visible']
+        except Exception as e:
+            lat = None
+            lon = None
+            position = None
+            fix_type = None
+            sats_visible = None
+
+        try:
+            system_status = status_dict['HEARTBEAT']['system_status']
+            custom_mode = status_dict['HEARTBEAT']['custom_mode']
+        except Exception as e:
+            system_status = None
+            custom_mode = None
+
+        try:
+            heading = status_dict['VFR_HUD']['heading']
+            speed_kmh = float(status_dict['VFR_HUD']['groundspeed']) * 3.6
+        except Exception as e:
+            heading = None
+            speed_kmh = None
+
         text_to_save, text_to_send = self.console_text_to_send()
         params_to_send = self.params_to_send()
         mpstats_to_send = self.mpstats_to_send()
+
+        datapoints_freeze = self.datapoints
+
+        print('datapoints_freeze', datapoints_freeze)
 
         data = {
             "time_vehicle": datetime.datetime.utcnow().isoformat(),
@@ -403,8 +508,10 @@ class Remote(mp_module.MPModule):
             "console_texts": text_to_send,
             "parameters": params_to_send,
             "mpstats": mpstats_to_send,
-            "datapoints": []
+            "datapoints": datapoints_freeze
         }
+
+        # print(data)
 
         r = requests.post(f'{self.api_url}/vehicles/{self.vehicle_server_id}/heartbeats/',
                           auth=(self.username, self.password),
@@ -418,6 +525,9 @@ class Remote(mp_module.MPModule):
                 self.params_last_sent[param['name']] = param['value']
             for mpstat in mpstats_to_send:
                 self.mpstats_last_sent[mpstat['name']] = mpstat['value']
+            for dp in datapoints_freeze:
+                if dp in self.datapoints:
+                    self.datapoints.remove(dp)
 
             # get new commands in response
             response = r.json()
@@ -476,11 +586,19 @@ class Remote(mp_module.MPModule):
         # check to see if any active alerts have expired
         self.mpstate.console.server_alerts.check_timeout()
 
-        # em data
-        self.check_em_connection()
-        if self.em_connection:
-            if self.em_connection.is_open():
-                self.em_collect()
+        if now - self.last_em_try > 3 and self.em_enabled and not self.em_thread:
+            print('starting em serial')
+            self.em_thread = True;
+            self.last_em_try = now
+            x = threading.Thread(target=self.em_connect)
+            x.start()
+
+        if now - self.last_rand_try > 3 and self.rand_enabled and not self.rand_thread:
+            print('start rand')
+            self.rand_thread = True
+            self.last_rand_try = now
+            x = threading.Thread(target=self.rand_connect)
+            x.start()
 
     def mavlink_packet(self, m):
         '''handle mavlink packets'''
