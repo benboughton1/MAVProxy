@@ -16,10 +16,10 @@ import json
 import time
 import datetime
 import requests
-import threading
 import serial
-
 import threading
+import random
+import geopy.distance
 
 from MAVProxy.modules.lib import mp_module
 from MAVProxy.modules.lib import mp_util
@@ -203,16 +203,21 @@ class Remote(mp_module.MPModule):
         self.em_file = None
         self.em_thread = False
         self.em_dataset_id = None
+        self.em_last_point = None
+        self.em_min_log_distance = None
+        self.last_em_try = time.time()
 
         self.rand_enabled = False
         self.rand_file = None
         self.rand_thread = False
         self.rand_dataset_id = None
+        self.rand_last_point = None
+        self.rand_min_log_distance = None
+        self.last_rand_try = time.time()
 
         self.datapoints = [];
 
         self.last_comm = time.time()
-        self.last_em_try = time.time()
 
         # self.status_callcount = 0
         self.packets_mytarget = 0
@@ -262,15 +267,27 @@ class Remote(mp_module.MPModule):
                 on_at_start = args[7].split(',')
                 for x in on_at_start:
                     details = x.split('|')
+                    print(details)
                     if details[0] == 'em':
                         print('Enabling EM')
                         self.em_enabled = True
                         self.em_dataset_id = int(details[1])
+                        try:
+                            self.em_min_log_distance = int(details[2])
+                        except:
+                            print('No EM min log distance set - setting to 7')
+                            self.em_min_log_distance = 7
                     if details[0] == 'rand':
-                        print('Enabling Random NUmber Dataset')
+                        print('Enabling Random Number Generator')
                         self.rand_enabled = True
                         self.rand_dataset_id = int(details[1])
+                        try:
+                            self.rand_min_log_distance = int(details[2])
+                        except:
+                            print('No Rand min log distance set - setting to 7')
+                            self.rand_min_log_distance = 7
             except Exception as e:
+                print(e)
                 pass
             try:
                 time.sleep(args[6])
@@ -401,10 +418,35 @@ class Remote(mp_module.MPModule):
     def check_em_connection(self):
         pass
 
+    def rand_connect(self):
+        while True:
+            try:
+                # generate random number and write to datastore and append to datapoints to send
+                r = random.random()
+                status_dict = json.loads(mpstatus_to_json(self.mpstate.status))
+                gps = status_dict['GPS_RAW_INT']
+                lat = int(gps['lat']) / 1.0e7
+                lon = int(gps['lon']) / 1.0e7
+                if int(gps['fix_type']) > 1:
+                    geom = f'POINT({str(lat)} {str(lon)})'
+                    distance = 0
+                    if self.rand_last_point:
+                        distance = geopy.distance.geodesic(self.rand_last_point, (lat, lon))
+                        print('DISTANCE', distance)
+                        if distance > self.rand_min_log_distance / 1000:
+                            self.datapoints.append({'dataset': self.rand_dataset_id, 'position': geom,
+                                                    'data': {'value': r, 'lat': lat, 'lon': lon}})
+                            self.rand_last_point = (lat, lon)
+                    else:
+                        self.rand_last_point = (lat, lon)
+                        self.datapoints.append({'dataset': self.rand_dataset_id, 'position': geom,
+                                                'data': {'value': r, 'lat': lat, 'lon': lon}})
 
-    while True:
-        # generate random number and write to datastore and append to datapoints to send
-    
+            except Exception as e:
+                print('Rand error', e)
+
+            time.sleep(2)
+
 
     def em_connect(self):
         connection = serial.Serial('/dev/ttyUSB0', 9600, timeout=2)
@@ -438,8 +480,17 @@ class Remote(mp_module.MPModule):
                     full_line['sats_visible'] = int(gps['satellites_visible'])
                     full_line['sat_fix'] = int(gps['fix_type'])
                     if int(gps['fix_type']) > 1:
-                        geom = f'POINT({str(lat)} {str(lon)})'                         
-                        self.datapoints.append({'dataset': self.em_dataset_id, 'position': geom, 'data': full_line})
+                        geom = f'POINT({str(lat)} {str(lon)})'
+                        distance = 0
+                        if self.em_last_point:
+                            distance = geopy.distance.geodesic(self.em_last_point, (lat, lon))
+                            print('DISTANCE', distance)
+                            if distance > self.em_min_log_distance / 1000:
+                                self.datapoints.append({'dataset': self.em_dataset_id, 'position': geom, 'data': full_line})
+                                self.em_last_point = (lat, lon)
+                        else:
+                            self.em_last_point = (lat, lon)
+                            self.datapoints.append({'dataset': self.em_dataset_id, 'position': geom, 'data': full_line})
                     f = open(f'/home/pi/datastore/{self.em_file}.txt', 'a')
                     f.write(json.dumps(full_line)+'\n')
                     f.close()
