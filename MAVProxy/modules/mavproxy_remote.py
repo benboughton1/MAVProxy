@@ -20,15 +20,12 @@ import serial
 import threading
 import random
 import geopy.distance
+import logging
+import logging.config
 
 from MAVProxy.modules.lib import mp_module
 from MAVProxy.modules.lib import mp_util
 from MAVProxy.modules.lib import mp_settings
-
-import pprint
-
-pp = pprint.PrettyPrinter(indent=4)
-
 
 def nmea_to_json(line):
     split = line.split('*')
@@ -428,7 +425,7 @@ class Remote(mp_module.MPModule):
                 lat = int(gps['lat']) / 1.0e7
                 lon = int(gps['lon']) / 1.0e7
                 if int(gps['fix_type']) > 1:
-                    geom = f'POINT({str(lat)} {str(lon)})'
+                    geom = f'POINT({str(lon)} {str(lat)})'
                     distance = 0
                     if self.rand_last_point:
                         distance = geopy.distance.geodesic(self.rand_last_point, (lat, lon))
@@ -480,7 +477,7 @@ class Remote(mp_module.MPModule):
                     full_line['sats_visible'] = int(gps['satellites_visible'])
                     full_line['sat_fix'] = int(gps['fix_type'])
                     if int(gps['fix_type']) > 1:
-                        geom = f'POINT({str(lat)} {str(lon)})'
+                        geom = f'POINT({str(lon)} {str(lat)})'
                         distance = 0
                         if self.em_last_point:
                             distance = geopy.distance.geodesic(self.em_last_point, (lat, lon))
@@ -509,83 +506,102 @@ class Remote(mp_module.MPModule):
         self.em_thread = False 
 
     def comm(self):
-        status_dict = json.loads(mpstatus_to_json(self.mpstate.status))
-        try:
-            lat = int(status_dict['GPS_RAW_INT']['lat']) / 1.0e7
-            lon = int(status_dict['GPS_RAW_INT']['lon']) / 1.0e7
-            position = f'POINT({str(lat)} {str(lon)})'
-            fix_type = status_dict['GPS_RAW_INT']['fix_type']
-            sats_visible = status_dict['GPS_RAW_INT']['satellites_visible']
-        except Exception as e:
-            lat = None
-            lon = None
-            position = None
-            fix_type = None
-            sats_visible = None
+        filename = '/tmp/rover-log.txt'
 
-        try:
-            system_status = status_dict['HEARTBEAT']['system_status']
-            custom_mode = status_dict['HEARTBEAT']['custom_mode']
-        except Exception as e:
-            system_status = None
-            custom_mode = None
-
-        try:
-            heading = status_dict['VFR_HUD']['heading']
-            speed_kmh = float(status_dict['VFR_HUD']['groundspeed']) * 3.6
-        except Exception as e:
-            heading = None
-            speed_kmh = None
-
-        text_to_save, text_to_send = self.console_text_to_send()
-        params_to_send = self.params_to_send()
-        mpstats_to_send = self.mpstats_to_send()
-
-        datapoints_freeze = self.datapoints
-
-        print('datapoints_freeze', datapoints_freeze)
-
-        data = {
-            "time_vehicle": datetime.datetime.utcnow().isoformat(),
-            "armed": self.is_armed(),
-            "position": position,
-            "heading": heading,
-            "speed": speed_kmh,
-            "packets": 0,
-            "fix_type": fix_type,
-            "sats_visible": sats_visible,
-            "system_status": system_status,
-            "custom_mode": custom_mode,
-            "console_texts": text_to_send,
-            "parameters": params_to_send,
-            "mpstats": mpstats_to_send,
-            "datapoints": datapoints_freeze
-        }
-
-        # print(data)
-
-        r = requests.post(f'{self.api_url}/vehicles/{self.vehicle_server_id}/heartbeats/',
-                          auth=(self.username, self.password),
-                          json=data
-                          )
-
-        if r.status_code == 201 or r.status_code == 200:
-            # update sent mpstats & params
-            self.status_text_sent += text_to_save
-            for param in params_to_send:
-                self.params_last_sent[param['name']] = param['value']
-            for mpstat in mpstats_to_send:
-                self.mpstats_last_sent[mpstat['name']] = mpstat['value']
-            for dp in datapoints_freeze:
-                if dp in self.datapoints:
-                    self.datapoints.remove(dp)
-
-            # get new commands in response
-            response = r.json()
-            print(response)
-            self.read_direct_commands(response['direct_commands'])
+        if os.path.exists(filename):
+            append_write = 'a'  # append if already exists
         else:
-            print(r.status_code, r.content)
+            append_write = 'w'  # make a new file if not
+
+        with open(filename, append_write) as log:
+            status_dict = json.loads(mpstatus_to_json(self.mpstate.status))
+            try:
+                lat = int(status_dict['GPS_RAW_INT']['lat']) / 1.0e7
+                lon = int(status_dict['GPS_RAW_INT']['lon']) / 1.0e7
+                position = f'POINT({str(lon)} {str(lat)})'
+                fix_type = status_dict['GPS_RAW_INT']['fix_type']
+                sats_visible = status_dict['GPS_RAW_INT']['satellites_visible']
+                log.write(f'INFO -- comm to write -- {lat} {lon} {sats_visible}\n')
+            except Exception as e:
+                lat = None
+                lon = None
+                position = None
+                fix_type = None
+                sats_visible = None
+                log.write(f'ERROR 1 -- comm -- {e}\n')
+                print(e)
+
+            try:
+                system_status = status_dict['HEARTBEAT']['system_status']
+                custom_mode = status_dict['HEARTBEAT']['custom_mode']
+            except Exception as e:
+                log.write(f'ERROR 2 -- comm -- {e}\n')
+                system_status = None
+                custom_mode = None
+                print(e)
+
+            try:
+                heading = status_dict['VFR_HUD']['heading']
+                speed_kmh = float(status_dict['VFR_HUD']['groundspeed']) * 3.6
+            except Exception as e:
+                heading = None
+                speed_kmh = None
+                log.write(f'ERROR 1 -- comm -- {e}\n')
+                print(e)
+
+            text_to_save, text_to_send = self.console_text_to_send()
+            params_to_send = self.params_to_send()
+            mpstats_to_send = self.mpstats_to_send()
+
+            datapoints_freeze = self.datapoints
+
+            print('datapoints_freeze', datapoints_freeze)
+
+            data = {
+                "time_vehicle": datetime.datetime.utcnow().isoformat(),
+                "armed": self.is_armed(),
+                "position": position,
+                "heading": heading,
+                "speed": speed_kmh,
+                "packets": 0,
+                "fix_type": fix_type,
+                "sats_visible": sats_visible,
+                "system_status": system_status,
+                "custom_mode": custom_mode,
+                "console_texts": text_to_send,
+                "parameters": params_to_send,
+                "mpstats": mpstats_to_send,
+                "datapoints": datapoints_freeze
+            }
+
+            # print(data)
+
+            r = requests.post(f'{self.api_url}/vehicles/{self.vehicle_server_id}/heartbeats/',
+                              auth=(self.username, self.password),
+                              json=data
+                              )
+
+            if r.status_code == 201 or r.status_code == 200:
+                # update sent mpstats & params
+                self.status_text_sent += text_to_save
+                for param in params_to_send:
+                    self.params_last_sent[param['name']] = param['value']
+                for mpstat in mpstats_to_send:
+                    self.mpstats_last_sent[mpstat['name']] = mpstat['value']
+                for dp in datapoints_freeze:
+                    if dp in self.datapoints:
+                        self.datapoints.remove(dp)
+
+                # get new commands in response
+                response = r.json()
+                print(response)
+                log.write(f'INFO -- comm response -- {response}\n')
+                self.read_direct_commands(response['direct_commands'])
+            else:
+                print(r.status_code, r.content)
+                log.write(f'INFO -- comm response -- bad response from server -- {r.status_code} {r.content}\n')
+
+
 
     def direct_command_rover(self):
         direct_command_pk = self.direct_command_queue.pop()
