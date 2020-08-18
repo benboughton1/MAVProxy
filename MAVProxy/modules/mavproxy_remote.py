@@ -644,7 +644,8 @@ class Remote(mp_module.MPModule):
         # send comm at set interval
         if now - self.last_comm > self.comm_interval and self.comm_start:
             self.last_comm = now
-            self.comm()
+            x = threading.Thread(target=self.comm)
+            x.start()
 
         # pop another job off the queue
         if len(self.direct_command_queue) > 0:
@@ -657,15 +658,15 @@ class Remote(mp_module.MPModule):
             print('starting em serial')
             self.em_thread = True;
             self.last_em_try = now
-            x = threading.Thread(target=self.em_connect)
-            x.start()
+            y = threading.Thread(target=self.em_connect)
+            y.start()
 
         if now - self.last_rand_try > 3 and self.rand_enabled and not self.rand_thread:
             print('start rand')
             self.rand_thread = True
             self.last_rand_try = now
-            x = threading.Thread(target=self.rand_connect)
-            x.start()
+            z = threading.Thread(target=self.rand_connect)
+            z.start()
 
     def mavlink_packet(self, m):
         '''handle mavlink packets'''
