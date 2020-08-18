@@ -30,16 +30,6 @@ from MAVProxy.modules.lib import mp_settings
 def nmea_to_json(line):
     split = line.split('*')
     data = split[0].split(',')
-    if data[0] == '$PDLM1':
-        return {
-            'array_length': 1,
-            'time': data[1],
-            'hcp_conductivity': float(data[2]),
-            'hcp_inphase': float(data[3]),
-            'prp_conductivity': float(data[4]),
-            'prp_inphase': float(data[5])
-        }
-
     if data[0] == '$PDLMA':
         return {
             'voltage': float(data[1]),
@@ -47,6 +37,17 @@ def nmea_to_json(line):
             'pitch': float(data[3]),
             'roll': float(data[4])
         }
+    elif data[0][:5] == '$PDLM':
+        return {
+            'array_length': float(data[0][5]),
+            'time': data[1],
+            'hcp_conductivity': float(data[2]),
+            'hcp_inphase': float(data[3]),
+            'prp_conductivity': float(data[4]),
+            'prp_inphase': float(data[5])
+        }
+
+
 
 
 def mavlink_to_dict(msg):
