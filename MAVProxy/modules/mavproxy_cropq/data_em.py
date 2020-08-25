@@ -10,14 +10,14 @@ def nmea_to_json(line):
     split = line.split('*')
     data = split[0].split(',')
     if data[0] == '$PDLMA':
-        return {
+        return data[0], {
             'voltage': float(data[1]),
             'temperature': float(data[2]),
             'pitch': float(data[3]),
             'roll': float(data[4])
         }
     elif data[0][:5] == '$PDLM':
-        return {
+        return data[0], {
             'array_length': str(data[0][5]), # needs to be string as half meter is 'H'
             'time': data[1],
             'hcp_conductivity': float(data[2]),
@@ -40,36 +40,47 @@ def em_connect(self):
         try:
             if time.time() - time_tracker > 1:
                 connection.write(b'%') # tells em to send extra line with pitch, roll etc
-            line = connection.readline().decode('utf-8')
-            if '$' in line:
-                json_data = nmea_to_json(line)
-                json_data['utc_datetime'] = datetime.datetime.utcnow().replace(microsecond=0).isoformat()
-                full_line = json_data
-                # try:
+            data = {}
+            round_complete = False
+            while not round_complete:
+                # print('round not complete', data.keys())
+                line = connection.readline().decode('utf-8')
+                # print(line)
+                if '$' in line:
+                    key, json_line = nmea_to_json(line)
+                    data[key] = json_line
+
+                if self.data_col_profiles['em']['model'] == '1s':
+                    if '$PDLM1' in data.keys() and '$PDLMA' in data.keys():
+                        round_complete = True
+            else:
+                # print('round_complete')
+                data['utc_datetime'] = datetime.datetime.utcnow().replace(microsecond=0).isoformat()
                 status_dict = json.loads(self.mpstatus_to_json(self.mpstate.status))
                 gps = status_dict['GPS_RAW_INT']
                 lat = int(gps['lat']) / 1.0e7
                 lon = int(gps['lon']) / 1.0e7
-                full_line['lat'] = lat
-                full_line['lon'] = lon
-                full_line['sats_visible'] = int(gps['satellites_visible'])
-                full_line['sat_fix'] = int(gps['fix_type'])
+                data['lat'] = lat
+                data['lon'] = lon
+                data['sats_visible'] = int(gps['satellites_visible'])
+                data['sat_fix'] = int(gps['fix_type'])
                 if int(gps['fix_type']) > 1:
                     geom = f'POINT({str(lon)} {str(lat)})'
                     distance = 0
-                    if self.em_last_point:
-                        distance = geopy.distance.geodesic(self.em_last_point, (lat, lon))
+                    if self.data_col_profiles['em']['last_point']:
+                        distance = geopy.distance.geodesic(self.data_col_profiles['em']['last_point'], (lat, lon))
                         print('DISTANCE', distance)
-                        if distance > self.em_min_log_distance / 1000:
-                            self.datapoints.append({'dataset': self.em_dataset_id, 'position': geom, 'data': full_line})
-                            self.em_last_point = (lat, lon)
+                        if distance > self.data_col_profiles['em']['min_log_distance_m'] / 1000:
+                            self.datapoints.append({'dataset': self.data_col_profiles['em']['dataset_id'], 'position': geom, 'data': data})
+                            self.data_col_profiles['em']['last_point'] = (lat, lon)
                     else:
-                        self.em_last_point = (lat, lon)
-                        self.datapoints.append({'dataset': self.em_dataset_id, 'position': geom, 'data': full_line})
+                        self.data_col_profiles['em']['last_point'] = (lat, lon)
+                        self.datapoints.append({'dataset': self.data_col_profiles['em']['dataset_id'], 'position': geom, 'data': data})
                 f = open(f'/home/pi/datastore/{self.em_file}.txt', 'a')
-                f.write(json.dumps(full_line ) +'\n')
+                f.write(json.dumps(data) +'\n')
                 f.close()
-                count = 0
+
+            count = 0
                 # time.sleep(1)
         except Exception as e:
             print('Problem accessing EM serial - this may resolve itself', count)

@@ -126,6 +126,8 @@ CreateRenderer	MAVProxy/modules/mavproxy_magical/wxvehicle.py	/^    def CreateRe
 CreateRenderer	build/lib/MAVProxy/modules/mavproxy_magical/glrenderer.py	/^    def CreateRenderer(self):$/;"	m	class:GLCanvas
 CreateRenderer	build/lib/MAVProxy/modules/mavproxy_magical/wxgeodesicgrid.py	/^    def CreateRenderer(self):$/;"	m	class:GeodesicGrid
 CreateRenderer	build/lib/MAVProxy/modules/mavproxy_magical/wxvehicle.py	/^    def CreateRenderer(self):$/;"	m	class:Vehicle
+CropqModule	MAVProxy/modules/mavproxy_cropq/__init__.py	/^class CropqModule(mp_module.MPModule):$/;"	c
+CropqModule	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^class CropqModule(mp_module.MPModule):$/;"	c
 D	MAVProxy/modules/lib/ANUGA/lat_long_UTM_conversion.py	/^    D = x\/(N1*k0)$/;"	v
 D	build/lib/MAVProxy/modules/lib/ANUGA/lat_long_UTM_conversion.py	/^    D = x\/(N1*k0)$/;"	v
 DARK_BACKGROUND	MAVProxy/modules/mavproxy_magical/magical_ui.py	/^DARK_BACKGROUND = '#d1d1d1'$/;"	v
@@ -394,6 +396,8 @@ LiveGraph	MAVProxy/modules/lib/live_graph.py	/^class LiveGraph():$/;"	c
 LiveGraph	build/lib/MAVProxy/modules/lib/live_graph.py	/^class LiveGraph():$/;"	c
 LoaderProgress	MAVProxy/modules/mavproxy_magical/magical_ui.py	/^    def LoaderProgress(self, parent):$/;"	m	class:MagicalFrame
 LoaderProgress	build/lib/MAVProxy/modules/mavproxy_magical/magical_ui.py	/^    def LoaderProgress(self, parent):$/;"	m	class:MagicalFrame
+LocalServer	MAVProxy/modules/mavproxy_cropq/local_server.py	/^class LocalServer():$/;"	c
+LocalServer	build/lib/MAVProxy/modules/mavproxy_cropq/local_server.py	/^class LocalServer():$/;"	c
 LogModule	MAVProxy/modules/mavproxy_log.py	/^class LogModule(mp_module.MPModule):$/;"	c
 LogModule	build/lib/MAVProxy/modules/mavproxy_log.py	/^class LogModule(mp_module.MPModule):$/;"	c
 Long	MAVProxy/modules/lib/ANUGA/lat_long_UTM_conversion.py	/^    Long = (D-(1+2*T1+C1)*D*D*D\/6+(5-2*C1+28*T1-3*C1*C1+8*eccPrimeSquared+24*T1*T1)$/;"	v
@@ -673,7 +677,8 @@ MarkerClip	MAVProxy/modules/mavproxy_mmap/mmap_app/index.html	/^function MarkerC
 MarkerClip	build/lib/MAVProxy/modules/mavproxy_mmap/mmap_app/index.html	/^function MarkerClip(map) {$/;"	f
 Material	MAVProxy/modules/lib/opengl.py	/^class Material(object):$/;"	c
 Material	build/lib/MAVProxy/modules/lib/opengl.py	/^class Material(object):$/;"	c
-MavAckAlerts	MAVProxy/modules/mavproxy_remote.py	/^class MavAckAlerts():$/;"	c
+MavAckAlerts	MAVProxy/modules/mavproxy_cropq/__init__.py	/^class MavAckAlerts():$/;"	c
+MavAckAlerts	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^class MavAckAlerts():$/;"	c
 MavAckAlerts	build/lib/MAVProxy/modules/mavproxy_remote.py	/^class MavAckAlerts():$/;"	c
 MavGraph	MAVProxy/modules/lib/grapher.py	/^class MavGraph(object):$/;"	c
 MavGraph	build/lib/MAVProxy/modules/lib/grapher.py	/^class MavGraph(object):$/;"	c
@@ -929,9 +934,9 @@ Read_File	MAVProxy/modules/mavproxy_paramedit/param_editor_frame.py	/^    def Re
 Read_File	build/lib/MAVProxy/modules/mavproxy_paramedit/param_editor_frame.py	/^    def Read_File(self, event):  # wxGlade: ParamEditor.<event_handler>$/;"	m	class:ParamEditorFrame
 RelayModule	MAVProxy/modules/mavproxy_relay.py	/^class RelayModule(mp_module.MPModule):$/;"	c
 RelayModule	build/lib/MAVProxy/modules/mavproxy_relay.py	/^class RelayModule(mp_module.MPModule):$/;"	c
-Remote	MAVProxy/modules/mavproxy_remote.py	/^class Remote(mp_module.MPModule):$/;"	c
 Remote	build/lib/MAVProxy/modules/mavproxy_remote.py	/^class Remote(mp_module.MPModule):$/;"	c
-RemoteConsole	MAVProxy/modules/mavproxy_remote.py	/^class RemoteConsole(textconsole.SimpleConsole):$/;"	c
+RemoteConsole	MAVProxy/modules/mavproxy_cropq/__init__.py	/^class RemoteConsole(textconsole.SimpleConsole):$/;"	c
+RemoteConsole	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^class RemoteConsole(textconsole.SimpleConsole):$/;"	c
 RemoteConsole	build/lib/MAVProxy/modules/mavproxy_remote.py	/^class RemoteConsole(textconsole.SimpleConsole):$/;"	c
 Renderer	MAVProxy/modules/mavproxy_magical/glrenderer.py	/^class Renderer(object):$/;"	c
 Renderer	MAVProxy/modules/mavproxy_magical/wxgeodesicgrid.py	/^class Renderer(glrenderer.Renderer):$/;"	c
@@ -981,7 +986,8 @@ SerialModule	MAVProxy/modules/mavproxy_serial.py	/^class SerialModule(mp_module.
 SerialModule	build/lib/MAVProxy/modules/mavproxy_serial.py	/^class SerialModule(mp_module.MPModule):$/;"	c
 Server	MAVProxy/modules/mavproxy_mmap/mmap_server.py	/^class Server(BaseHTTPServer.HTTPServer):$/;"	c
 Server	build/lib/MAVProxy/modules/mavproxy_mmap/mmap_server.py	/^class Server(BaseHTTPServer.HTTPServer):$/;"	c
-ServerAlerts	MAVProxy/modules/mavproxy_remote.py	/^class ServerAlerts():$/;"	c
+ServerAlerts	MAVProxy/modules/mavproxy_cropq/__init__.py	/^class ServerAlerts():$/;"	c
+ServerAlerts	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^class ServerAlerts():$/;"	c
 ServerAlerts	build/lib/MAVProxy/modules/mavproxy_remote.py	/^class ServerAlerts():$/;"	c
 ServerModule	MAVProxy/modules/mavproxy_restserver.py	/^class ServerModule(mp_module.MPModule):$/;"	c
 ServerModule	build/lib/MAVProxy/modules/mavproxy_restserver.py	/^class ServerModule(mp_module.MPModule):$/;"	c
@@ -1170,7 +1176,8 @@ TestState	MAVProxy/modules/mavproxy_test.py	/^TestState = enum(INIT=1, FBWA=2, A
 TestState	build/lib/MAVProxy/modules/mavproxy_test.py	/^TestState = enum(INIT=1, FBWA=2, AUTO=3)$/;"	v
 Text	MAVProxy/modules/lib/wxconsole_util.py	/^class Text():$/;"	c
 Text	build/lib/MAVProxy/modules/lib/wxconsole_util.py	/^class Text():$/;"	c
-TextList	MAVProxy/modules/mavproxy_remote.py	/^class TextList():$/;"	c
+TextList	MAVProxy/modules/mavproxy_cropq/__init__.py	/^class TextList():$/;"	c
+TextList	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^class TextList():$/;"	c
 TextList	build/lib/MAVProxy/modules/mavproxy_remote.py	/^class TextList():$/;"	c
 TileException	MAVProxy/modules/mavproxy_map/mp_tile.py	/^class TileException(Exception):$/;"	c
 TileException	build/lib/MAVProxy/modules/mavproxy_map/mp_tile.py	/^class TileException(Exception):$/;"	c
@@ -1444,6 +1451,12 @@ __init__	MAVProxy/modules/mavproxy_checklist.py	/^    def __init__(self, mpstate
 __init__	MAVProxy/modules/mavproxy_cmdlong.py	/^    def __init__(self, mpstate):$/;"	m	class:CmdlongModule
 __init__	MAVProxy/modules/mavproxy_console.py	/^    def __init__(self, fmt, expression, row):$/;"	m	class:DisplayItem
 __init__	MAVProxy/modules/mavproxy_console.py	/^    def __init__(self, mpstate):$/;"	m	class:ConsoleModule
+__init__	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def __init__(self):$/;"	m	class:TextList
+__init__	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def __init__(self, mpstate):$/;"	m	class:CropqModule
+__init__	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def __init__(self, remote_self):$/;"	m	class:MavAckAlerts
+__init__	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def __init__(self, remote_self):$/;"	m	class:RemoteConsole
+__init__	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def __init__(self, remote_self):$/;"	m	class:ServerAlerts
+__init__	MAVProxy/modules/mavproxy_cropq/local_server.py	/^    def __init__(self, state):$/;"	m	class:LocalServer
 __init__	MAVProxy/modules/mavproxy_dataflash_logger.py	/^    def __init__(self, mpstate):$/;"	m	class:dataflash_logger
 __init__	MAVProxy/modules/mavproxy_devop.py	/^    def __init__(self, mpstate):$/;"	m	class:DeviceOpModule
 __init__	MAVProxy/modules/mavproxy_emuecu.py	/^    def __init__(self, mpstate):$/;"	m	class:EMUECUModule
@@ -1579,11 +1592,6 @@ __init__	MAVProxy/modules/mavproxy_rally.py	/^    def __init__(self, mpstate):$/
 __init__	MAVProxy/modules/mavproxy_rc.py	/^    def __init__(self, mpstate):$/;"	m	class:RCModule
 __init__	MAVProxy/modules/mavproxy_rcsetup.py	/^    def __init__(self, mpstate):$/;"	m	class:RCSetupModule
 __init__	MAVProxy/modules/mavproxy_relay.py	/^    def __init__(self, mpstate):$/;"	m	class:RelayModule
-__init__	MAVProxy/modules/mavproxy_remote.py	/^    def __init__(self):$/;"	m	class:TextList
-__init__	MAVProxy/modules/mavproxy_remote.py	/^    def __init__(self, mpstate):$/;"	m	class:Remote
-__init__	MAVProxy/modules/mavproxy_remote.py	/^    def __init__(self, remote_self):$/;"	m	class:MavAckAlerts
-__init__	MAVProxy/modules/mavproxy_remote.py	/^    def __init__(self, remote_self):$/;"	m	class:RemoteConsole
-__init__	MAVProxy/modules/mavproxy_remote.py	/^    def __init__(self, remote_self):$/;"	m	class:ServerAlerts
 __init__	MAVProxy/modules/mavproxy_restserver.py	/^    def __init__(self, mpstate):$/;"	m	class:ServerModule
 __init__	MAVProxy/modules/mavproxy_restserver.py	/^    def __init__(self, state):$/;"	m	class:RestServer
 __init__	MAVProxy/modules/mavproxy_sensors.py	/^    def __init__(self):$/;"	m	class:sensors_report
@@ -1732,6 +1740,12 @@ __init__	build/lib/MAVProxy/modules/mavproxy_checklist.py	/^    def __init__(sel
 __init__	build/lib/MAVProxy/modules/mavproxy_cmdlong.py	/^    def __init__(self, mpstate):$/;"	m	class:CmdlongModule
 __init__	build/lib/MAVProxy/modules/mavproxy_console.py	/^    def __init__(self, fmt, expression, row):$/;"	m	class:DisplayItem
 __init__	build/lib/MAVProxy/modules/mavproxy_console.py	/^    def __init__(self, mpstate):$/;"	m	class:ConsoleModule
+__init__	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def __init__(self):$/;"	m	class:TextList
+__init__	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def __init__(self, mpstate):$/;"	m	class:CropqModule
+__init__	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def __init__(self, remote_self):$/;"	m	class:MavAckAlerts
+__init__	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def __init__(self, remote_self):$/;"	m	class:RemoteConsole
+__init__	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def __init__(self, remote_self):$/;"	m	class:ServerAlerts
+__init__	build/lib/MAVProxy/modules/mavproxy_cropq/local_server.py	/^    def __init__(self, state):$/;"	m	class:LocalServer
 __init__	build/lib/MAVProxy/modules/mavproxy_dataflash_logger.py	/^    def __init__(self, mpstate):$/;"	m	class:dataflash_logger
 __init__	build/lib/MAVProxy/modules/mavproxy_devop.py	/^    def __init__(self, mpstate):$/;"	m	class:DeviceOpModule
 __init__	build/lib/MAVProxy/modules/mavproxy_emuecu.py	/^    def __init__(self, mpstate):$/;"	m	class:EMUECUModule
@@ -2244,11 +2258,14 @@ activityPackets	MAVProxy/modules/mavproxy_link.py	/^activityPackets = frozenset(
 activityPackets	build/lib/MAVProxy/modules/mavproxy_link.py	/^activityPackets = frozenset([ 'HEARTBEAT', 'GPS_RAW_INT', 'GPS_RAW', 'GLOBAL_POSITION_INT', 'SYS_STATUS' ])$/;"	v
 add	MAVProxy/modules/lib/mp_menu.py	/^    def add(self, items):$/;"	m	class:MPMenuTop
 add	MAVProxy/modules/lib/mp_menu.py	/^    def add(self, items, addto=None):$/;"	m	class:MPMenuSubMenu
-add	MAVProxy/modules/mavproxy_remote.py	/^    def add(self, line):$/;"	m	class:TextList
-add	MAVProxy/modules/mavproxy_remote.py	/^    def add(self, trigger, timeout):$/;"	m	class:MavAckAlerts
-add	MAVProxy/modules/mavproxy_remote.py	/^    def add(self, trigger, timeout):$/;"	m	class:ServerAlerts
+add	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def add(self, line):$/;"	m	class:TextList
+add	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def add(self, trigger, timeout):$/;"	m	class:MavAckAlerts
+add	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def add(self, trigger, timeout):$/;"	m	class:ServerAlerts
 add	build/lib/MAVProxy/modules/lib/mp_menu.py	/^    def add(self, items):$/;"	m	class:MPMenuTop
 add	build/lib/MAVProxy/modules/lib/mp_menu.py	/^    def add(self, items, addto=None):$/;"	m	class:MPMenuSubMenu
+add	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def add(self, line):$/;"	m	class:TextList
+add	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def add(self, trigger, timeout):$/;"	m	class:MavAckAlerts
+add	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def add(self, trigger, timeout):$/;"	m	class:ServerAlerts
 add	build/lib/MAVProxy/modules/mavproxy_remote.py	/^    def add(self, line):$/;"	m	class:TextList
 add	build/lib/MAVProxy/modules/mavproxy_remote.py	/^    def add(self, trigger, timeout):$/;"	m	class:MavAckAlerts
 add	build/lib/MAVProxy/modules/mavproxy_remote.py	/^    def add(self, trigger, timeout):$/;"	m	class:ServerAlerts
@@ -2273,7 +2290,9 @@ add_completion_function	MAVProxy/modules/lib/mp_module.py	/^    def add_completi
 add_completion_function	build/lib/MAVProxy/modules/lib/mp_module.py	/^    def add_completion_function(self, name, callback):$/;"	m	class:MPModule
 add_data	MAVProxy/modules/lib/grapher.py	/^    def add_data(self, t, msg, vars):$/;"	m	class:MavGraph
 add_data	build/lib/MAVProxy/modules/lib/grapher.py	/^    def add_data(self, t, msg, vars):$/;"	m	class:MavGraph
+add_endpoint	MAVProxy/modules/mavproxy_cropq/local_server.py	/^    def add_endpoint(self):$/;"	m	class:LocalServer
 add_endpoint	MAVProxy/modules/mavproxy_restserver.py	/^    def add_endpoint(self):$/;"	m	class:RestServer
+add_endpoint	build/lib/MAVProxy/modules/mavproxy_cropq/local_server.py	/^    def add_endpoint(self):$/;"	m	class:LocalServer
 add_endpoint	build/lib/MAVProxy/modules/mavproxy_restserver.py	/^    def add_endpoint(self):$/;"	m	class:RestServer
 add_fftd	MAVProxy/modules/lib/mav_fft.py	/^        def add_fftd(self, fftd):$/;"	m	class:mavfft_display.PlotData
 add_fftd	build/lib/MAVProxy/modules/lib/mav_fft.py	/^        def add_fftd(self, fftd):$/;"	m	class:mavfft_display.PlotData
@@ -2550,15 +2569,16 @@ checkInstalled	MAVProxy/modules/lib/MacOS/wxversion.py	/^def checkInstalled(vers
 checkInstalled	build/lib/MAVProxy/modules/lib/MacOS/wxversion.py	/^def checkInstalled(versions, optionsRequired=False):$/;"	f
 checkReszie	MAVProxy/modules/lib/wxhorizon_ui.py	/^    def checkReszie(self):$/;"	m	class:HorizonFrame
 checkReszie	build/lib/MAVProxy/modules/lib/wxhorizon_ui.py	/^    def checkReszie(self):$/;"	m	class:HorizonFrame
-check_alerts	MAVProxy/modules/mavproxy_remote.py	/^    def check_alerts(self, ack):$/;"	m	class:MavAckAlerts
-check_alerts	MAVProxy/modules/mavproxy_remote.py	/^    def check_alerts(self, console_line):$/;"	m	class:ServerAlerts
+check_alerts	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def check_alerts(self, ack):$/;"	m	class:MavAckAlerts
+check_alerts	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def check_alerts(self, console_line):$/;"	m	class:ServerAlerts
+check_alerts	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def check_alerts(self, ack):$/;"	m	class:MavAckAlerts
+check_alerts	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def check_alerts(self, console_line):$/;"	m	class:ServerAlerts
 check_alerts	build/lib/MAVProxy/modules/mavproxy_remote.py	/^    def check_alerts(self, ack):$/;"	m	class:MavAckAlerts
 check_alerts	build/lib/MAVProxy/modules/mavproxy_remote.py	/^    def check_alerts(self, console_line):$/;"	m	class:ServerAlerts
 check_altitude	MAVProxy/modules/mavproxy_fieldcheck/__init__.py	/^    def check_altitude(self):$/;"	m	class:FieldCheck
 check_altitude	build/lib/MAVProxy/modules/mavproxy_fieldcheck/__init__.py	/^    def check_altitude(self):$/;"	m	class:FieldCheck
 check_apm_out	MAVProxy/modules/mavproxy_HIL.py	/^    def check_apm_out(self):$/;"	m	class:HILModule
 check_apm_out	build/lib/MAVProxy/modules/mavproxy_HIL.py	/^    def check_apm_out(self):$/;"	m	class:HILModule
-check_em_connection	MAVProxy/modules/mavproxy_remote.py	/^    def check_em_connection(self):$/;"	m	class:Remote
 check_em_connection	build/lib/MAVProxy/modules/mavproxy_remote.py	/^    def check_em_connection(self):$/;"	m	class:Remote
 check_events	MAVProxy/modules/mavproxy_map/mp_slipmap.py	/^    def check_events(self):$/;"	m	class:MPSlipMap
 check_events	build/lib/MAVProxy/modules/mavproxy_map/mp_slipmap.py	/^    def check_events(self):$/;"	m	class:MPSlipMap
@@ -2602,7 +2622,8 @@ check_status	build/lib/MAVProxy/modules/mavproxy_fieldcheck/__init__.py	/^    de
 check_status	build/lib/MAVProxy/modules/mavproxy_smartcamera/sc_main.py	/^    def check_status(self):$/;"	m	class:SmartCamera
 check_threat_timeout	MAVProxy/modules/mavproxy_adsb.py	/^    def check_threat_timeout(self):$/;"	m	class:ADSBModule
 check_threat_timeout	build/lib/MAVProxy/modules/mavproxy_adsb.py	/^    def check_threat_timeout(self):$/;"	m	class:ADSBModule
-check_timeout	MAVProxy/modules/mavproxy_remote.py	/^    def check_timeout(self):$/;"	m	class:ServerAlerts
+check_timeout	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def check_timeout(self):$/;"	m	class:ServerAlerts
+check_timeout	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def check_timeout(self):$/;"	m	class:ServerAlerts
 check_timeout	build/lib/MAVProxy/modules/mavproxy_remote.py	/^    def check_timeout(self):$/;"	m	class:ServerAlerts
 check_video_out	MAVProxy/modules/mavproxy_smartcamera/sc_main.py	/^    def check_video_out(self):$/;"	m	class:SmartCamera
 check_video_out	build/lib/MAVProxy/modules/mavproxy_smartcamera/sc_main.py	/^    def check_video_out(self):$/;"	m	class:SmartCamera
@@ -2775,6 +2796,8 @@ cmd_console	MAVProxy/modules/mavproxy_console.py	/^    def cmd_console(self, arg
 cmd_console	build/lib/MAVProxy/modules/mavproxy_console.py	/^    def cmd_console(self, args):$/;"	m	class:ConsoleModule
 cmd_crc	MAVProxy/modules/mavproxy_ftp.py	/^    def cmd_crc(self, args):$/;"	m	class:FTPModule
 cmd_crc	build/lib/MAVProxy/modules/mavproxy_ftp.py	/^    def cmd_crc(self, args):$/;"	m	class:FTPModule
+cmd_cropq	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def cmd_cropq(self, args):$/;"	m	class:CropqModule
+cmd_cropq	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def cmd_cropq(self, args):$/;"	m	class:CropqModule
 cmd_dataflash_logger	MAVProxy/modules/mavproxy_dataflash_logger.py	/^    def cmd_dataflash_logger(self, args):$/;"	m	class:dataflash_logger
 cmd_dataflash_logger	build/lib/MAVProxy/modules/mavproxy_dataflash_logger.py	/^    def cmd_dataflash_logger(self, args):$/;"	m	class:dataflash_logger
 cmd_devid	MAVProxy/modules/mavproxy_misc.py	/^    def cmd_devid(self, args):$/;"	m	class:MiscModule
@@ -3004,7 +3027,6 @@ cmd_relay	MAVProxy/modules/mavproxy_relay.py	/^    def cmd_relay(self, args):$/;
 cmd_relay	build/lib/MAVProxy/modules/mavproxy_relay.py	/^    def cmd_relay(self, args):$/;"	m	class:RelayModule
 cmd_reload	MAVProxy/tools/MAVExplorer.py	/^def cmd_reload(args):$/;"	f
 cmd_reload	build/scripts-3.7/MAVExplorer.py	/^def cmd_reload(args):$/;"	f
-cmd_remote	MAVProxy/modules/mavproxy_remote.py	/^    def cmd_remote(self, args):$/;"	m	class:Remote
 cmd_remote	build/lib/MAVProxy/modules/mavproxy_remote.py	/^    def cmd_remote(self, args):$/;"	m	class:Remote
 cmd_rename	MAVProxy/modules/mavproxy_ftp.py	/^    def cmd_rename(self, args):$/;"	m	class:FTPModule
 cmd_rename	build/lib/MAVProxy/modules/mavproxy_ftp.py	/^    def cmd_rename(self, args):$/;"	m	class:FTPModule
@@ -3196,7 +3218,8 @@ combine	MAVProxy/modules/lib/mp_menu.py	/^    def combine(self, submenu):$/;"	m	
 combine	build/lib/MAVProxy/modules/lib/mp_menu.py	/^    def combine(self, submenu):$/;"	m	class:MPMenuSubMenu
 combobox	MAVProxy/modules/mavproxy_paramedit/param_editor_frame.py	/^    def combobox(self, event):$/;"	m	class:ParamEditorFrame
 combobox	build/lib/MAVProxy/modules/mavproxy_paramedit/param_editor_frame.py	/^    def combobox(self, event):$/;"	m	class:ParamEditorFrame
-comm	MAVProxy/modules/mavproxy_remote.py	/^    def comm(self):$/;"	m	class:Remote
+comm	MAVProxy/modules/mavproxy_cropq/comm.py	/^def comm(self):$/;"	f
+comm	build/lib/MAVProxy/modules/mavproxy_cropq/comm.py	/^def comm(self):$/;"	f
 comm	build/lib/MAVProxy/modules/mavproxy_remote.py	/^    def comm(self):$/;"	m	class:Remote
 command	MAVProxy/modules/lib/mp_settings.py	/^    def command(self, args):$/;"	m	class:MPSettings
 command	build/lib/MAVProxy/modules/lib/mp_settings.py	/^    def command(self, args):$/;"	m	class:MPSettings
@@ -3252,7 +3275,8 @@ console	MAVProxy/modules/lib/wxconsole.py	/^    console = MessageConsole()$/;"	v
 console	build/lib/MAVProxy/modules/lib/mp_module.py	/^    def console(self):$/;"	m	class:MPModule
 console	build/lib/MAVProxy/modules/lib/textconsole.py	/^    console = SimpleConsole()$/;"	v
 console	build/lib/MAVProxy/modules/lib/wxconsole.py	/^    console = MessageConsole()$/;"	v
-console_text_to_send	MAVProxy/modules/mavproxy_remote.py	/^    def console_text_to_send(self):$/;"	m	class:Remote
+console_text_to_send	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def console_text_to_send(self):$/;"	m	class:CropqModule
+console_text_to_send	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def console_text_to_send(self):$/;"	m	class:CropqModule
 console_text_to_send	build/lib/MAVProxy/modules/mavproxy_remote.py	/^    def console_text_to_send(self):$/;"	m	class:Remote
 container	MAVProxy/modules/mavproxy_mmap/mmap_app/modestmaps.js	/^        container: function() {$/;"	m	class:MM.Coordinate
 container	build/lib/MAVProxy/modules/mavproxy_mmap/mmap_app/modestmaps.js	/^        container: function() {$/;"	m	class:MM.Coordinate
@@ -3374,6 +3398,8 @@ cy	build/lib/MAVProxy/modules/mavproxy_mmap/mmap_app/modestmaps.js	/^        cy:
 data	windows/createChangelog.py	/^        data = blob.data_stream.read()$/;"	v
 dataPackets	MAVProxy/modules/mavproxy_link.py	/^dataPackets = frozenset(['BAD_DATA','LOG_DATA'])$/;"	v
 dataPackets	build/lib/MAVProxy/modules/mavproxy_link.py	/^dataPackets = frozenset(['BAD_DATA','LOG_DATA'])$/;"	v
+data_collection_setup	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def data_collection_setup(self, profile_list):$/;"	m	class:CropqModule
+data_collection_setup	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def data_collection_setup(self, profile_list):$/;"	m	class:CropqModule
 dataflash_logger	MAVProxy/modules/mavproxy_dataflash_logger.py	/^class dataflash_logger(mp_module.MPModule):$/;"	c
 dataflash_logger	build/lib/MAVProxy/modules/mavproxy_dataflash_logger.py	/^class dataflash_logger(mp_module.MPModule):$/;"	c
 datapath	MAVProxy/modules/mavproxy_magical/__init__.py	/^    datapath = p.join(p.dirname(p.abspath(__file__)), 'data')$/;"	v
@@ -3422,7 +3448,8 @@ devop_write	MAVProxy/modules/mavproxy_devop.py	/^    def devop_write(self, args,
 devop_write	build/lib/MAVProxy/modules/mavproxy_devop.py	/^    def devop_write(self, args, bustype):$/;"	m	class:DeviceOpModule
 dimensions	MAVProxy/modules/mavproxy_mmap/mmap_app/modestmaps.js	/^        dimensions: null,      \/\/ MM.Point with x\/y size of parent element$/;"	p	class:MM.Map
 dimensions	build/lib/MAVProxy/modules/mavproxy_mmap/mmap_app/modestmaps.js	/^        dimensions: null,      \/\/ MM.Point with x\/y size of parent element$/;"	p	class:MM.Map
-direct_command_rover	MAVProxy/modules/mavproxy_remote.py	/^    def direct_command_rover(self):$/;"	m	class:Remote
+direct_command_rover	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def direct_command_rover(self):$/;"	m	class:CropqModule
+direct_command_rover	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def direct_command_rover(self):$/;"	m	class:CropqModule
 direct_command_rover	build/lib/MAVProxy/modules/mavproxy_remote.py	/^    def direct_command_rover(self):$/;"	m	class:Remote
 discover	MAVProxy/modules/mavproxy_smartcamera/ssdp.py	/^def discover(service, if_ip=None, timeout=2, retries=1):$/;"	f
 discover	build/lib/MAVProxy/modules/mavproxy_smartcamera/ssdp.py	/^def discover(service, if_ip=None, timeout=2, retries=1):$/;"	f
@@ -3469,7 +3496,8 @@ downloadTile	MAVProxy/modules/mavproxy_map/srtm.py	/^    def downloadTile(self, 
 downloadTile	build/lib/MAVProxy/modules/mavproxy_map/srtm.py	/^    def downloadTile(self, continent, filename):$/;"	m	class:SRTMDownloader
 download_files	MAVProxy/modules/lib/mp_util.py	/^def download_files(files):$/;"	f
 download_files	build/lib/MAVProxy/modules/lib/mp_util.py	/^def download_files(files):$/;"	f
-download_mission_file	MAVProxy/modules/mavproxy_remote.py	/^    def download_mission_file(self, job, mission):$/;"	m	class:Remote
+download_mission_file	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def download_mission_file(self, job, mission):$/;"	m	class:CropqModule
+download_mission_file	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def download_mission_file(self, job, mission):$/;"	m	class:CropqModule
 download_mission_file	build/lib/MAVProxy/modules/mavproxy_remote.py	/^    def download_mission_file(self, job, mission):$/;"	m	class:Remote
 download_url	MAVProxy/modules/lib/mp_util.py	/^def download_url(url):$/;"	f
 download_url	MAVProxy/modules/mavproxy_firmware.py	/^    def download_url(self, url, path):$/;"	f
@@ -3578,7 +3606,8 @@ eccSquared	MAVProxy/modules/lib/ANUGA/lat_long_UTM_conversion.py	/^    eccSquare
 eccSquared	build/lib/MAVProxy/modules/lib/ANUGA/lat_long_UTM_conversion.py	/^    eccSquared = _ellipsoid[ReferenceEllipsoid][_eccentricitySquared]$/;"	v
 edge_colour	MAVProxy/modules/lib/grapher.py	/^edge_colour = (0.1, 0.1, 0.1)$/;"	v
 edge_colour	build/lib/MAVProxy/modules/lib/grapher.py	/^edge_colour = (0.1, 0.1, 0.1)$/;"	v
-em_connect	MAVProxy/modules/mavproxy_remote.py	/^    def em_connect(self):$/;"	m	class:Remote
+em_connect	MAVProxy/modules/mavproxy_cropq/data_em.py	/^def em_connect(self):$/;"	f
+em_connect	build/lib/MAVProxy/modules/mavproxy_cropq/data_em.py	/^def em_connect(self):$/;"	f
 em_connect	build/lib/MAVProxy/modules/mavproxy_remote.py	/^    def em_connect(self):$/;"	m	class:Remote
 emit_accumulated_statustext	MAVProxy/modules/mavproxy_link.py	/^    def emit_accumulated_statustext(self, key, id, pending):$/;"	m	class:LinkModule
 emit_accumulated_statustext	build/lib/MAVProxy/modules/mavproxy_link.py	/^    def emit_accumulated_statustext(self, key, id, pending):$/;"	m	class:LinkModule
@@ -4143,6 +4172,7 @@ idle_task	MAVProxy/modules/mavproxy_HIL.py	/^    def idle_task(self):$/;"	m	clas
 idle_task	MAVProxy/modules/mavproxy_adsb.py	/^    def idle_task(self):$/;"	m	class:ADSBModule
 idle_task	MAVProxy/modules/mavproxy_asterix.py	/^    def idle_task(self):$/;"	m	class:AsterixModule
 idle_task	MAVProxy/modules/mavproxy_calibration.py	/^    def idle_task(self):$/;"	m	class:CalibrationModule
+idle_task	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def idle_task(self):$/;"	m	class:CropqModule
 idle_task	MAVProxy/modules/mavproxy_dataflash_logger.py	/^    def idle_task(self):$/;"	m	class:dataflash_logger
 idle_task	MAVProxy/modules/mavproxy_example.py	/^    def idle_task(self):$/;"	m	class:example
 idle_task	MAVProxy/modules/mavproxy_fakegps.py	/^    def idle_task(self):$/;"	m	class:FakeGPSModule
@@ -4178,7 +4208,6 @@ idle_task	MAVProxy/modules/mavproxy_paramedit/param_editor.py	/^    def idle_tas
 idle_task	MAVProxy/modules/mavproxy_rally.py	/^    def idle_task(self):$/;"	m	class:RallyModule
 idle_task	MAVProxy/modules/mavproxy_rc.py	/^    def idle_task(self):$/;"	m	class:RCModule
 idle_task	MAVProxy/modules/mavproxy_rcsetup.py	/^    def idle_task(self):$/;"	m	class:RCSetupModule
-idle_task	MAVProxy/modules/mavproxy_remote.py	/^    def idle_task(self):$/;"	m	class:Remote
 idle_task	MAVProxy/modules/mavproxy_restserver.py	/^    def idle_task(self):$/;"	m	class:ServerModule
 idle_task	MAVProxy/modules/mavproxy_setpos.py	/^    def idle_task(self):$/;"	m	class:SetPosModule
 idle_task	MAVProxy/modules/mavproxy_smartcamera/__init__.py	/^    def idle_task(self):$/;"	m	class:SmartCameraModule
@@ -4196,6 +4225,7 @@ idle_task	build/lib/MAVProxy/modules/mavproxy_HIL.py	/^    def idle_task(self):$
 idle_task	build/lib/MAVProxy/modules/mavproxy_adsb.py	/^    def idle_task(self):$/;"	m	class:ADSBModule
 idle_task	build/lib/MAVProxy/modules/mavproxy_asterix.py	/^    def idle_task(self):$/;"	m	class:AsterixModule
 idle_task	build/lib/MAVProxy/modules/mavproxy_calibration.py	/^    def idle_task(self):$/;"	m	class:CalibrationModule
+idle_task	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def idle_task(self):$/;"	m	class:CropqModule
 idle_task	build/lib/MAVProxy/modules/mavproxy_dataflash_logger.py	/^    def idle_task(self):$/;"	m	class:dataflash_logger
 idle_task	build/lib/MAVProxy/modules/mavproxy_example.py	/^    def idle_task(self):$/;"	m	class:example
 idle_task	build/lib/MAVProxy/modules/mavproxy_fakegps.py	/^    def idle_task(self):$/;"	m	class:FakeGPSModule
@@ -4289,6 +4319,7 @@ init	MAVProxy/modules/mavproxy_cameraview.py	/^def init(mpstate):$/;"	f
 init	MAVProxy/modules/mavproxy_checklist.py	/^def init(mpstate):$/;"	f
 init	MAVProxy/modules/mavproxy_cmdlong.py	/^def init(mpstate):$/;"	f
 init	MAVProxy/modules/mavproxy_console.py	/^def init(mpstate):$/;"	f
+init	MAVProxy/modules/mavproxy_cropq/__init__.py	/^def init(mpstate):$/;"	f
 init	MAVProxy/modules/mavproxy_dataflash_logger.py	/^def init(mpstate):$/;"	f
 init	MAVProxy/modules/mavproxy_devop.py	/^def init(mpstate):$/;"	f
 init	MAVProxy/modules/mavproxy_emuecu.py	/^def init(mpstate):$/;"	f
@@ -4338,7 +4369,6 @@ init	MAVProxy/modules/mavproxy_rally.py	/^def init(mpstate):$/;"	f
 init	MAVProxy/modules/mavproxy_rc.py	/^def init(mpstate):$/;"	f
 init	MAVProxy/modules/mavproxy_rcsetup.py	/^def init(mpstate):$/;"	f
 init	MAVProxy/modules/mavproxy_relay.py	/^def init(mpstate):$/;"	f
-init	MAVProxy/modules/mavproxy_remote.py	/^def init(mpstate):$/;"	f
 init	MAVProxy/modules/mavproxy_restserver.py	/^def init(mpstate):$/;"	f
 init	MAVProxy/modules/mavproxy_sensors.py	/^def init(mpstate):$/;"	f
 init	MAVProxy/modules/mavproxy_serial.py	/^def init(mpstate):$/;"	f
@@ -4370,6 +4400,7 @@ init	build/lib/MAVProxy/modules/mavproxy_cameraview.py	/^def init(mpstate):$/;"	
 init	build/lib/MAVProxy/modules/mavproxy_checklist.py	/^def init(mpstate):$/;"	f
 init	build/lib/MAVProxy/modules/mavproxy_cmdlong.py	/^def init(mpstate):$/;"	f
 init	build/lib/MAVProxy/modules/mavproxy_console.py	/^def init(mpstate):$/;"	f
+init	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^def init(mpstate):$/;"	f
 init	build/lib/MAVProxy/modules/mavproxy_dataflash_logger.py	/^def init(mpstate):$/;"	f
 init	build/lib/MAVProxy/modules/mavproxy_devop.py	/^def init(mpstate):$/;"	f
 init	build/lib/MAVProxy/modules/mavproxy_emuecu.py	/^def init(mpstate):$/;"	f
@@ -4481,7 +4512,8 @@ is_alive	build/lib/MAVProxy/modules/lib/wxsettings.py	/^    def is_alive(self):$
 is_alive	build/lib/MAVProxy/modules/mavproxy_graph.py	/^    def is_alive(self):$/;"	m	class:Graph
 is_alive	build/lib/MAVProxy/modules/mavproxy_map/mp_slipmap.py	/^    def is_alive(self):$/;"	m	class:MPSlipMap
 is_alive	build/scripts-3.7/mp_slipmap.py	/^    def is_alive(self):$/;"	m	class:MPSlipMap
-is_armed	MAVProxy/modules/mavproxy_remote.py	/^    def is_armed(self):$/;"	m	class:Remote
+is_armed	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def is_armed(self):$/;"	m	class:CropqModule
+is_armed	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def is_armed(self):$/;"	m	class:CropqModule
 is_armed	build/lib/MAVProxy/modules/mavproxy_remote.py	/^    def is_armed(self):$/;"	m	class:Remote
 is_primary_vehicle	MAVProxy/modules/lib/mp_module.py	/^    def is_primary_vehicle(self, msg):$/;"	m	class:MPModule
 is_primary_vehicle	build/lib/MAVProxy/modules/lib/mp_module.py	/^    def is_primary_vehicle(self, msg):$/;"	m	class:MPModule
@@ -4768,6 +4800,7 @@ mavlink_packet	MAVProxy/modules/mavproxy_calibration.py	/^    def mavlink_packet
 mavlink_packet	MAVProxy/modules/mavproxy_cameraview.py	/^    def mavlink_packet(self, m):$/;"	m	class:CameraViewModule
 mavlink_packet	MAVProxy/modules/mavproxy_checklist.py	/^    def mavlink_packet(self, msg):$/;"	m	class:ChecklistModule
 mavlink_packet	MAVProxy/modules/mavproxy_console.py	/^    def mavlink_packet(self, msg):$/;"	m	class:ConsoleModule
+mavlink_packet	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def mavlink_packet(self, m):$/;"	m	class:CropqModule
 mavlink_packet	MAVProxy/modules/mavproxy_dataflash_logger.py	/^    def mavlink_packet(self, m):$/;"	m	class:dataflash_logger
 mavlink_packet	MAVProxy/modules/mavproxy_devop.py	/^    def mavlink_packet(self, m):$/;"	m	class:DeviceOpModule
 mavlink_packet	MAVProxy/modules/mavproxy_emuecu.py	/^    def mavlink_packet(self, msg):$/;"	m	class:EMUECUModule
@@ -4800,7 +4833,6 @@ mavlink_packet	MAVProxy/modules/mavproxy_paramedit/param_editor.py	/^    def mav
 mavlink_packet	MAVProxy/modules/mavproxy_ppp.py	/^    def mavlink_packet(self, m):$/;"	m	class:PPPModule
 mavlink_packet	MAVProxy/modules/mavproxy_rally.py	/^    def mavlink_packet(self, m):$/;"	m	class:RallyModule
 mavlink_packet	MAVProxy/modules/mavproxy_rcsetup.py	/^    def mavlink_packet(self, m):$/;"	m	class:RCSetupModule
-mavlink_packet	MAVProxy/modules/mavproxy_remote.py	/^    def mavlink_packet(self, m):$/;"	m	class:Remote
 mavlink_packet	MAVProxy/modules/mavproxy_restserver.py	/^    def mavlink_packet(self, m):$/;"	m	class:ServerModule
 mavlink_packet	MAVProxy/modules/mavproxy_sensors.py	/^    def mavlink_packet(self, m):$/;"	m	class:SensorsModule
 mavlink_packet	MAVProxy/modules/mavproxy_serial.py	/^    def mavlink_packet(self, m):$/;"	m	class:SerialModule
@@ -4826,6 +4858,7 @@ mavlink_packet	build/lib/MAVProxy/modules/mavproxy_calibration.py	/^    def mavl
 mavlink_packet	build/lib/MAVProxy/modules/mavproxy_cameraview.py	/^    def mavlink_packet(self, m):$/;"	m	class:CameraViewModule
 mavlink_packet	build/lib/MAVProxy/modules/mavproxy_checklist.py	/^    def mavlink_packet(self, msg):$/;"	m	class:ChecklistModule
 mavlink_packet	build/lib/MAVProxy/modules/mavproxy_console.py	/^    def mavlink_packet(self, msg):$/;"	m	class:ConsoleModule
+mavlink_packet	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def mavlink_packet(self, m):$/;"	m	class:CropqModule
 mavlink_packet	build/lib/MAVProxy/modules/mavproxy_dataflash_logger.py	/^    def mavlink_packet(self, m):$/;"	m	class:dataflash_logger
 mavlink_packet	build/lib/MAVProxy/modules/mavproxy_devop.py	/^    def mavlink_packet(self, m):$/;"	m	class:DeviceOpModule
 mavlink_packet	build/lib/MAVProxy/modules/mavproxy_emuecu.py	/^    def mavlink_packet(self, msg):$/;"	m	class:EMUECUModule
@@ -4872,10 +4905,12 @@ mavlink_packet	build/lib/MAVProxy/modules/mavproxy_timesync.py	/^    def mavlink
 mavlink_packet	build/lib/MAVProxy/modules/mavproxy_tracker.py	/^    def mavlink_packet(self, m):$/;"	m	class:TrackerModule
 mavlink_packet	build/lib/MAVProxy/modules/mavproxy_ucenter.py	/^    def mavlink_packet(self, m):$/;"	m	class:UcenterModule
 mavlink_packet	build/lib/MAVProxy/modules/mavproxy_wp.py	/^    def mavlink_packet(self, m):$/;"	m	class:WPModule
-mavlink_to_dict	MAVProxy/modules/mavproxy_remote.py	/^def mavlink_to_dict(msg):$/;"	f
+mavlink_to_dict	MAVProxy/modules/mavproxy_cropq/__init__.py	/^def mavlink_to_dict(msg):$/;"	f
+mavlink_to_dict	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^def mavlink_to_dict(msg):$/;"	f
 mavlink_to_dict	build/lib/MAVProxy/modules/mavproxy_remote.py	/^def mavlink_to_dict(msg):$/;"	f
-mavlink_to_json	MAVProxy/modules/mavproxy_remote.py	/^def mavlink_to_json(msg):$/;"	f
+mavlink_to_json	MAVProxy/modules/mavproxy_cropq/__init__.py	/^def mavlink_to_json(msg):$/;"	f
 mavlink_to_json	MAVProxy/modules/mavproxy_restserver.py	/^def mavlink_to_json(msg):$/;"	f
+mavlink_to_json	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^def mavlink_to_json(msg):$/;"	f
 mavlink_to_json	build/lib/MAVProxy/modules/mavproxy_remote.py	/^def mavlink_to_json(msg):$/;"	f
 mavlink_to_json	build/lib/MAVProxy/modules/mavproxy_restserver.py	/^def mavlink_to_json(msg):$/;"	f
 mavversion	MAVProxy/mavproxy.py	/^mavversion = None$/;"	v
@@ -4971,10 +5006,12 @@ mp_icon	build/scripts-3.7/mp_tile.py	/^def mp_icon(filename):$/;"	f
 mpstate	MAVProxy/mavproxy.py	/^    mpstate = MPState()$/;"	v
 mpstate	build/lib/MAVProxy/mavproxy.py	/^    mpstate = MPState()$/;"	v
 mpstate	build/scripts-3.7/mavproxy.py	/^    mpstate = MPState()$/;"	v
-mpstats_to_send	MAVProxy/modules/mavproxy_remote.py	/^    def mpstats_to_send(self):$/;"	m	class:Remote
+mpstats_to_send	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def mpstats_to_send(self):$/;"	m	class:CropqModule
+mpstats_to_send	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def mpstats_to_send(self):$/;"	m	class:CropqModule
 mpstats_to_send	build/lib/MAVProxy/modules/mavproxy_remote.py	/^    def mpstats_to_send(self):$/;"	m	class:Remote
-mpstatus_to_json	MAVProxy/modules/mavproxy_remote.py	/^def mpstatus_to_json(status):$/;"	f
+mpstatus_to_json	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def mpstatus_to_json(self, status):$/;"	m	class:CropqModule
 mpstatus_to_json	MAVProxy/modules/mavproxy_restserver.py	/^def mpstatus_to_json(status):$/;"	f
+mpstatus_to_json	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def mpstatus_to_json(self, status):$/;"	m	class:CropqModule
 mpstatus_to_json	build/lib/MAVProxy/modules/mavproxy_remote.py	/^def mpstatus_to_json(status):$/;"	f
 mpstatus_to_json	build/lib/MAVProxy/modules/mavproxy_restserver.py	/^def mpstatus_to_json(status):$/;"	f
 msg	MAVProxy/modules/mavproxy_msg.py	/^class msg(mp_module.MPModule):$/;"	c
@@ -5027,7 +5064,8 @@ new_timer	MAVProxy/modules/lib/MacOS/backend_wx.py	/^    def new_timer(self, *ar
 new_timer	build/lib/MAVProxy/modules/lib/MacOS/backend_wx.py	/^    def new_timer(self, *args, **kwargs):$/;"	m	class:FigureCanvasWx
 next_flightmode_colour	MAVProxy/modules/lib/grapher.py	/^    def next_flightmode_colour(self):$/;"	m	class:MavGraph
 next_flightmode_colour	build/lib/MAVProxy/modules/lib/grapher.py	/^    def next_flightmode_colour(self):$/;"	m	class:MavGraph
-nmea_to_json	MAVProxy/modules/mavproxy_remote.py	/^def nmea_to_json(line):$/;"	f
+nmea_to_json	MAVProxy/modules/mavproxy_cropq/data_em.py	/^def nmea_to_json(line):$/;"	f
+nmea_to_json	build/lib/MAVProxy/modules/mavproxy_cropq/data_em.py	/^def nmea_to_json(line):$/;"	f
 nmea_to_json	build/lib/MAVProxy/modules/mavproxy_remote.py	/^def nmea_to_json(line):$/;"	f
 nofly_add	MAVProxy/modules/mavproxy_wp.py	/^    def nofly_add(self):$/;"	m	class:WPModule
 nofly_add	build/lib/MAVProxy/modules/mavproxy_wp.py	/^    def nofly_add(self):$/;"	m	class:WPModule
@@ -5230,7 +5268,8 @@ param_status	MAVProxy/modules/mavproxy_param.py	/^    def param_status(self):$/;
 param_status	build/lib/MAVProxy/modules/mavproxy_param.py	/^    def param_status(self):$/;"	m	class:ParamModule
 param_use_xml_filepath	MAVProxy/modules/mavproxy_param.py	/^    def param_use_xml_filepath(self, filepath):$/;"	m	class:ParamState
 param_use_xml_filepath	build/lib/MAVProxy/modules/mavproxy_param.py	/^    def param_use_xml_filepath(self, filepath):$/;"	m	class:ParamState
-params_to_send	MAVProxy/modules/mavproxy_remote.py	/^    def params_to_send(self):$/;"	m	class:Remote
+params_to_send	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def params_to_send(self):$/;"	m	class:CropqModule
+params_to_send	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def params_to_send(self):$/;"	m	class:CropqModule
 params_to_send	build/lib/MAVProxy/modules/mavproxy_remote.py	/^    def params_to_send(self):$/;"	m	class:Remote
 parent	MAVProxy/modules/mavproxy_mmap/mmap_app/modestmaps.js	/^        parent: null,          \/\/ DOM Element$/;"	p	class:MM.Map
 parent	MAVProxy/modules/mavproxy_mmap/mmap_app/modestmaps.js	/^        parent: null,$/;"	p	class:MM.Layer
@@ -5340,8 +5379,6 @@ popup	MAVProxy/modules/lib/mp_menu.py	/^    popup = MPMenuSubMenu('A Popup',$/;"
 popup	build/lib/MAVProxy/modules/lib/mp_menu.py	/^    popup = MPMenuSubMenu('A Popup',$/;"	v
 power_status_update	MAVProxy/modules/mavproxy_battery.py	/^    def power_status_update(self, POWER_STATUS):$/;"	m	class:BatteryModule
 power_status_update	build/lib/MAVProxy/modules/mavproxy_battery.py	/^    def power_status_update(self, POWER_STATUS):$/;"	m	class:BatteryModule
-pp	MAVProxy/modules/mavproxy_remote.py	/^pp = pprint.PrettyPrinter(indent=4)$/;"	v
-pp	build/lib/MAVProxy/modules/mavproxy_remote.py	/^pp = pprint.PrettyPrinter(indent=4)$/;"	v
 ppp_read	MAVProxy/modules/mavproxy_ppp.py	/^    def ppp_read(self, ppp_fd):$/;"	m	class:PPPModule
 ppp_read	build/lib/MAVProxy/modules/mavproxy_ppp.py	/^    def ppp_read(self, ppp_fd):$/;"	m	class:PPPModule
 precise	MAVProxy/modules/mavproxy_mmap/mmap_app/modestmaps.js	/^        precise: false,$/;"	p	class:MM.MouseWheelHandler
@@ -5474,6 +5511,9 @@ rally_point	MAVProxy/modules/mavproxy_rally.py	/^    def rally_point(self, i):$/
 rally_point	build/lib/MAVProxy/modules/mavproxy_rally.py	/^    def rally_point(self, i):$/;"	m	class:RallyModule
 rallyloader	MAVProxy/modules/mavproxy_rally.py	/^    def rallyloader(self):$/;"	m	class:RallyModule
 rallyloader	build/lib/MAVProxy/modules/mavproxy_rally.py	/^    def rallyloader(self):$/;"	m	class:RallyModule
+rand_connect	MAVProxy/modules/mavproxy_cropq/data_random.py	/^def rand_connect(self):$/;"	f
+rand_connect	build/lib/MAVProxy/modules/mavproxy_cropq/data_random.py	/^def rand_connect(self):$/;"	f
+rand_connect	build/lib/MAVProxy/modules/mavproxy_remote.py	/^    def rand_connect(self):$/;"	m	class:Remote
 randalt	MAVProxy/modules/mavproxy_genobstacles.py	/^    def randalt(self):$/;"	m	class:DNFZ
 randalt	build/lib/MAVProxy/modules/mavproxy_genobstacles.py	/^    def randalt(self):$/;"	m	class:DNFZ
 randpos	MAVProxy/modules/mavproxy_genobstacles.py	/^    def randpos(self):$/;"	m	class:DNFZ
@@ -5514,7 +5554,8 @@ read_ASCII	build/lib/MAVProxy/modules/lib/ANUGA/geo_reference.py	/^    def read_
 read_NetCDF	MAVProxy/modules/lib/ANUGA/geo_reference.py	/^    def read_NetCDF(self, infile):$/;"	m	class:Geo_reference
 read_NetCDF	build/lib/MAVProxy/modules/lib/ANUGA/geo_reference.py	/^    def read_NetCDF(self, infile):$/;"	m	class:Geo_reference
 read_api_token	MAVProxy/modules/mavproxy_ublox/__init__.py	/^    def read_api_token(self):$/;"	m	class:ublox
-read_direct_commands	MAVProxy/modules/mavproxy_remote.py	/^    def read_direct_commands(self, direct_commands):$/;"	m	class:Remote
+read_direct_commands	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def read_direct_commands(self, direct_commands):$/;"	m	class:CropqModule
+read_direct_commands	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def read_direct_commands(self, direct_commands):$/;"	m	class:CropqModule
 read_direct_commands	build/lib/MAVProxy/modules/mavproxy_remote.py	/^    def read_direct_commands(self, direct_commands):$/;"	m	class:Remote
 read_ermapper	MAVProxy/modules/mavproxy_map/GAreader.py	/^    def read_ermapper(self, ifile):$/;"	m	class:ERMap
 read_ermapper	build/lib/MAVProxy/modules/mavproxy_map/GAreader.py	/^    def read_ermapper(self, ifile):$/;"	m	class:ERMap
@@ -5637,6 +5678,8 @@ request_mission	MAVProxy/modules/mavproxy_restserver.py	/^    def request_missio
 request_mission	build/lib/MAVProxy/modules/mavproxy_restserver.py	/^    def request_mission(self):$/;"	m	class:RestServer
 request_terminal	MAVProxy/modules/mavproxy_restserver.py	/^    def request_terminal(self, arg=None):$/;"	m	class:RestServer
 request_terminal	build/lib/MAVProxy/modules/mavproxy_restserver.py	/^    def request_terminal(self, arg=None):$/;"	m	class:RestServer
+request_test	MAVProxy/modules/mavproxy_cropq/local_server.py	/^    def request_test(self, arg=None):$/;"	m	class:LocalServer
+request_test	build/lib/MAVProxy/modules/mavproxy_cropq/local_server.py	/^    def request_test(self, arg=None):$/;"	m	class:LocalServer
 request_waypoints	MAVProxy/modules/mavproxy_restserver.py	/^    def request_waypoints(self):$/;"	m	class:RestServer
 request_waypoints	build/lib/MAVProxy/modules/mavproxy_restserver.py	/^    def request_waypoints(self):$/;"	m	class:RestServer
 requestsById	MAVProxy/modules/mavproxy_mmap/mmap_app/modestmaps.js	/^        requestsById: null,$/;"	p	class:MM.RequestManager
@@ -5705,6 +5748,7 @@ rule_expand	build/lib/MAVProxy/modules/lib/rline.py	/^def rule_expand(component,
 rule_match	MAVProxy/modules/lib/rline.py	/^def rule_match(component, cmd):$/;"	f
 rule_match	build/lib/MAVProxy/modules/lib/rline.py	/^def rule_match(component, cmd):$/;"	f
 run	MAVProxy/modules/lib/wavefront.py	/^    def run(self):$/;"	m	class:ParserWorker
+run	MAVProxy/modules/mavproxy_cropq/local_server.py	/^    def run(self):$/;"	m	class:LocalServer
 run	MAVProxy/modules/mavproxy_misseditor/mission_editor.py	/^            def run(self):$/;"	m	class:MissionEditorMain.child_task.CloseWindowSemaphoreWatcher
 run	MAVProxy/modules/mavproxy_misseditor/mission_editor.py	/^    def run(self):$/;"	m	class:MissionEditorEventThread
 run	MAVProxy/modules/mavproxy_paramedit/param_editor.py	/^            def run(self):$/;"	m	class:ParamEditorMain.child_task.CloseWindowSemaphoreWatcher
@@ -5712,6 +5756,7 @@ run	MAVProxy/modules/mavproxy_paramedit/param_editor.py	/^    def run(self):$/;"
 run	MAVProxy/modules/mavproxy_restserver.py	/^    def run(self):$/;"	m	class:RestServer
 run	MAVProxy/modules/mavproxy_smartcamera/sc_main.py	/^    def run(self):$/;"	m	class:SmartCamera
 run	build/lib/MAVProxy/modules/lib/wavefront.py	/^    def run(self):$/;"	m	class:ParserWorker
+run	build/lib/MAVProxy/modules/mavproxy_cropq/local_server.py	/^    def run(self):$/;"	m	class:LocalServer
 run	build/lib/MAVProxy/modules/mavproxy_misseditor/mission_editor.py	/^            def run(self):$/;"	m	class:MissionEditorMain.child_task.CloseWindowSemaphoreWatcher
 run	build/lib/MAVProxy/modules/mavproxy_misseditor/mission_editor.py	/^    def run(self):$/;"	m	class:MissionEditorEventThread
 run	build/lib/MAVProxy/modules/mavproxy_paramedit/param_editor.py	/^            def run(self):$/;"	m	class:ParamEditorMain.child_task.CloseWindowSemaphoreWatcher
@@ -5723,7 +5768,9 @@ run_command	build/lib/MAVProxy/modules/mavproxy_misc.py	/^def run_command(args, 
 run_script	MAVProxy/mavproxy.py	/^def run_script(scriptfile):$/;"	f
 run_script	build/lib/MAVProxy/mavproxy.py	/^def run_script(scriptfile):$/;"	f
 run_script	build/scripts-3.7/mavproxy.py	/^def run_script(scriptfile):$/;"	f
+running	MAVProxy/modules/mavproxy_cropq/local_server.py	/^    def running(self):$/;"	m	class:LocalServer
 running	MAVProxy/modules/mavproxy_restserver.py	/^    def running(self):$/;"	m	class:RestServer
+running	build/lib/MAVProxy/modules/mavproxy_cropq/local_server.py	/^    def running(self):$/;"	m	class:LocalServer
 running	build/lib/MAVProxy/modules/mavproxy_restserver.py	/^    def running(self):$/;"	m	class:RestServer
 sGetLatestImageFilename	MAVProxy/modules/mavproxy_smartcamera/sc_SonyQX1.py	/^    def sGetLatestImageFilename(self):$/;"	m	class:SmartCamera_SonyQX
 sGetLatestImageFilename	build/lib/MAVProxy/modules/mavproxy_smartcamera/sc_SonyQX1.py	/^    def sGetLatestImageFilename(self):$/;"	m	class:SmartCamera_SonyQX
@@ -6008,7 +6055,9 @@ set_image	build/lib/MAVProxy/modules/lib/mp_image.py	/^    def set_image(self, i
 set_image	build/lib/MAVProxy/modules/lib/mp_widgets.py	/^    def set_image(self, img):$/;"	m	class:ImagePanel
 set_integer	MAVProxy/modules/mavproxy_smartcamera/sc_config.py	/^    def set_integer(self, section, option, new_value):$/;"	m	class:SmartCameraConfig
 set_integer	build/lib/MAVProxy/modules/mavproxy_smartcamera/sc_config.py	/^    def set_integer(self, section, option, new_value):$/;"	m	class:SmartCameraConfig
+set_ip_port	MAVProxy/modules/mavproxy_cropq/local_server.py	/^    def set_ip_port(self, ip, port):$/;"	m	class:LocalServer
 set_ip_port	MAVProxy/modules/mavproxy_restserver.py	/^    def set_ip_port(self, ip, port):$/;"	m	class:RestServer
+set_ip_port	build/lib/MAVProxy/modules/mavproxy_cropq/local_server.py	/^    def set_ip_port(self, ip, port):$/;"	m	class:LocalServer
 set_ip_port	build/lib/MAVProxy/modules/mavproxy_restserver.py	/^    def set_ip_port(self, ip, port):$/;"	m	class:RestServer
 set_joinstyle	MAVProxy/modules/lib/MacOS/backend_wx.py	/^    def set_joinstyle(self, js):$/;"	m	class:GraphicsContextWx
 set_joinstyle	build/lib/MAVProxy/modules/lib/MacOS/backend_wx.py	/^    def set_joinstyle(self, js):$/;"	m	class:GraphicsContextWx
@@ -6092,9 +6141,10 @@ set_show_flightmode	MAVProxy/modules/lib/grapher.py	/^    def set_show_flightmod
 set_show_flightmode	build/lib/MAVProxy/modules/lib/grapher.py	/^    def set_show_flightmode(self, value):$/;"	m	class:MavGraph
 set_status	MAVProxy/modules/lib/textconsole.py	/^    def set_status(self, name, text='', row=0, fg='black', bg='white'):$/;"	m	class:SimpleConsole
 set_status	MAVProxy/modules/lib/wxconsole.py	/^    def set_status(self, name, text='', row=0, fg='black', bg='white'):$/;"	m	class:MessageConsole
-set_status	MAVProxy/modules/mavproxy_remote.py	/^    def set_status(self, name, text='', row=0, fg='black', bg='white'):$/;"	m	class:RemoteConsole
+set_status	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def set_status(self, name, text='', row=0, fg='black', bg='white'):$/;"	m	class:RemoteConsole
 set_status	build/lib/MAVProxy/modules/lib/textconsole.py	/^    def set_status(self, name, text='', row=0, fg='black', bg='white'):$/;"	m	class:SimpleConsole
 set_status	build/lib/MAVProxy/modules/lib/wxconsole.py	/^    def set_status(self, name, text='', row=0, fg='black', bg='white'):$/;"	m	class:MessageConsole
+set_status	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def set_status(self, name, text='', row=0, fg='black', bg='white'):$/;"	m	class:RemoteConsole
 set_status	build/lib/MAVProxy/modules/mavproxy_remote.py	/^    def set_status(self, name, text='', row=0, fg='black', bg='white'):$/;"	m	class:RemoteConsole
 set_status_bar	MAVProxy/modules/lib/MacOS/backend_wx.py	/^    def set_status_bar(self, statbar):$/;"	m	class:NavigationToolbar2Wx
 set_status_bar	build/lib/MAVProxy/modules/lib/MacOS/backend_wx.py	/^    def set_status_bar(self, statbar):$/;"	m	class:NavigationToolbar2Wx
@@ -6208,9 +6258,11 @@ spinctrl	MAVProxy/modules/mavproxy_paramedit/param_editor_frame.py	/^    def spi
 spinctrl	build/lib/MAVProxy/modules/mavproxy_paramedit/param_editor_frame.py	/^    def spinctrl(self, event):$/;"	m	class:ParamEditorFrame
 split_pushed	MAVProxy/modules/mavproxy_misseditor/missionEditorFrame.py	/^    def split_pushed(self, event):  # wxGlade: MissionEditorFrame.<event_handler>$/;"	m	class:MissionEditorFrame
 split_pushed	build/lib/MAVProxy/modules/mavproxy_misseditor/missionEditorFrame.py	/^    def split_pushed(self, event):  # wxGlade: MissionEditorFrame.<event_handler>$/;"	m	class:MissionEditorFrame
+start	MAVProxy/modules/mavproxy_cropq/local_server.py	/^    def start(self):$/;"	m	class:LocalServer
 start	MAVProxy/modules/mavproxy_genobstacles.py	/^    def start(self):$/;"	m	class:GenobstaclesModule
 start	MAVProxy/modules/mavproxy_map/srtm.py	/^    start = time.time()$/;"	v
 start	MAVProxy/modules/mavproxy_restserver.py	/^    def start(self):$/;"	m	class:RestServer
+start	build/lib/MAVProxy/modules/mavproxy_cropq/local_server.py	/^    def start(self):$/;"	m	class:LocalServer
 start	build/lib/MAVProxy/modules/mavproxy_genobstacles.py	/^    def start(self):$/;"	m	class:GenobstaclesModule
 start	build/lib/MAVProxy/modules/mavproxy_map/srtm.py	/^    start = time.time()$/;"	v
 start	build/lib/MAVProxy/modules/mavproxy_restserver.py	/^    def start(self):$/;"	m	class:RestServer
@@ -6261,9 +6313,11 @@ status	build/lib/MAVProxy/modules/mavproxy_messagerate.py	/^    def status(self)
 status	build/lib/MAVProxy/modules/mavproxy_movinghome.py	/^    def status(self):$/;"	m	class:movinghome
 status	build/lib/MAVProxy/modules/mavproxy_param.py	/^    def status(self, master, mpstate):$/;"	m	class:ParamState
 status	build/lib/MAVProxy/modules/mavproxy_system_time.py	/^    def status(self):$/;"	m	class:system_time
+stop	MAVProxy/modules/mavproxy_cropq/local_server.py	/^    def stop(self):$/;"	m	class:LocalServer
 stop	MAVProxy/modules/mavproxy_genobstacles.py	/^    def stop(self):$/;"	m	class:GenobstaclesModule
 stop	MAVProxy/modules/mavproxy_nsh.py	/^    def stop(self):$/;"	m	class:NSHModule
 stop	MAVProxy/modules/mavproxy_restserver.py	/^    def stop(self):$/;"	m	class:RestServer
+stop	build/lib/MAVProxy/modules/mavproxy_cropq/local_server.py	/^    def stop(self):$/;"	m	class:LocalServer
 stop	build/lib/MAVProxy/modules/mavproxy_genobstacles.py	/^    def stop(self):$/;"	m	class:GenobstaclesModule
 stop	build/lib/MAVProxy/modules/mavproxy_nsh.py	/^    def stop(self):$/;"	m	class:NSHModule
 stop	build/lib/MAVProxy/modules/mavproxy_restserver.py	/^    def stop(self):$/;"	m	class:RestServer
@@ -6554,7 +6608,8 @@ update_col	MAVProxy/modules/mavproxy_cameraview.py	/^    def update_col(self):$/
 update_col	build/lib/MAVProxy/modules/mavproxy_cameraview.py	/^    def update_col(self):$/;"	m	class:CameraViewModule
 update_dict	MAVProxy/modules/mavproxy_restserver.py	/^    def update_dict(self, mpstate):$/;"	m	class:RestServer
 update_dict	build/lib/MAVProxy/modules/mavproxy_restserver.py	/^    def update_dict(self, mpstate):$/;"	m	class:RestServer
-update_direct_command	MAVProxy/modules/mavproxy_remote.py	/^    def update_direct_command(self, direct_command_pk, status=None, mav_status=None):$/;"	m	class:Remote
+update_direct_command	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def update_direct_command(self, direct_command_pk, status=None, mav_status=None):$/;"	m	class:CropqModule
+update_direct_command	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def update_direct_command(self, direct_command_pk, status=None, mav_status=None):$/;"	m	class:CropqModule
 update_direct_command	build/lib/MAVProxy/modules/mavproxy_remote.py	/^    def update_direct_command(self, direct_command_pk, status=None, mav_status=None):$/;"	m	class:Remote
 update_map_click_position	MAVProxy/modules/mavproxy_misseditor/mission_editor.py	/^    def update_map_click_position(self, new_click_pos):$/;"	m	class:MissionEditorMain
 update_map_click_position	build/lib/MAVProxy/modules/mavproxy_misseditor/mission_editor.py	/^    def update_map_click_position(self, new_click_pos):$/;"	m	class:MissionEditorMain
@@ -6585,6 +6640,7 @@ url	build/lib/MAVProxy/modules/mavproxy_map/mp_tile.py	/^    def url(self, servi
 url	build/scripts-3.7/mp_tile.py	/^    def url(self, service):$/;"	m	class:TileInfo
 url	setup.py	/^      url='https:\/\/github.com\/ArduPilot\/MAVProxy',$/;"	v
 usage	MAVProxy/modules/lib/ntrip.py	/^    usage = "NtripClient.py [options] [caster] [port] mountpoint"$/;"	v	class:NtripClient
+usage	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def usage(self):$/;"	m	class:CropqModule
 usage	MAVProxy/modules/mavproxy_dataflash_logger.py	/^    def usage(self):$/;"	m	class:dataflash_logger
 usage	MAVProxy/modules/mavproxy_example.py	/^    def usage(self):$/;"	m	class:example
 usage	MAVProxy/modules/mavproxy_firmware.py	/^    def usage(self):$/;"	m	class:FirmwareModule
@@ -6592,11 +6648,11 @@ usage	MAVProxy/modules/mavproxy_joystick/__init__.py	/^    def usage(self):$/;"	
 usage	MAVProxy/modules/mavproxy_message.py	/^    def usage(self):$/;"	m	class:message
 usage	MAVProxy/modules/mavproxy_messagerate.py	/^    def usage(self):$/;"	m	class:messagerate
 usage	MAVProxy/modules/mavproxy_msg.py	/^    def usage(self):$/;"	m	class:msg
-usage	MAVProxy/modules/mavproxy_remote.py	/^    def usage(self):$/;"	m	class:Remote
 usage	MAVProxy/modules/mavproxy_restserver.py	/^    def usage(self):$/;"	m	class:ServerModule
 usage	MAVProxy/modules/mavproxy_system_time.py	/^    def usage(self):$/;"	m	class:system_time
 usage	MAVProxy/modules/mavproxy_ublox/__init__.py	/^    def usage(self):$/;"	m	class:ublox
 usage	build/lib/MAVProxy/modules/lib/ntrip.py	/^    usage = "NtripClient.py [options] [caster] [port] mountpoint"$/;"	v	class:NtripClient
+usage	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def usage(self):$/;"	m	class:CropqModule
 usage	build/lib/MAVProxy/modules/mavproxy_dataflash_logger.py	/^    def usage(self):$/;"	m	class:dataflash_logger
 usage	build/lib/MAVProxy/modules/mavproxy_example.py	/^    def usage(self):$/;"	m	class:example
 usage	build/lib/MAVProxy/modules/mavproxy_firmware.py	/^    def usage(self):$/;"	m	class:FirmwareModule
@@ -6703,12 +6759,13 @@ write	MAVProxy/mavproxy.py	/^    def write(self):$/;"	m	class:MPStatus
 write	MAVProxy/modules/lib/MacOS/backend_wx.py	/^    def write(self, msg):$/;"	m	class:fake_stderr
 write	MAVProxy/modules/lib/textconsole.py	/^    def write(self, text, fg='black', bg='white'):$/;"	m	class:SimpleConsole
 write	MAVProxy/modules/lib/wxconsole.py	/^    def write(self, text, fg='black', bg='white'):$/;"	m	class:MessageConsole
-write	MAVProxy/modules/mavproxy_remote.py	/^    def write(self, text, fg='black', bg='white'):$/;"	m	class:RemoteConsole
+write	MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def write(self, text, fg='black', bg='white'):$/;"	m	class:RemoteConsole
 write	MAVProxy/modules/mavproxy_ucenter.py	/^    def write(self, b):$/;"	m	class:UcenterModule
 write	build/lib/MAVProxy/mavproxy.py	/^    def write(self):$/;"	m	class:MPStatus
 write	build/lib/MAVProxy/modules/lib/MacOS/backend_wx.py	/^    def write(self, msg):$/;"	m	class:fake_stderr
 write	build/lib/MAVProxy/modules/lib/textconsole.py	/^    def write(self, text, fg='black', bg='white'):$/;"	m	class:SimpleConsole
 write	build/lib/MAVProxy/modules/lib/wxconsole.py	/^    def write(self, text, fg='black', bg='white'):$/;"	m	class:MessageConsole
+write	build/lib/MAVProxy/modules/mavproxy_cropq/__init__.py	/^    def write(self, text, fg='black', bg='white'):$/;"	m	class:RemoteConsole
 write	build/lib/MAVProxy/modules/mavproxy_remote.py	/^    def write(self, text, fg='black', bg='white'):$/;"	m	class:RemoteConsole
 write	build/lib/MAVProxy/modules/mavproxy_ucenter.py	/^    def write(self, b):$/;"	m	class:UcenterModule
 write	build/scripts-3.7/mavproxy.py	/^    def write(self):$/;"	m	class:MPStatus
