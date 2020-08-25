@@ -3,51 +3,34 @@
 Remote Module
 Ben Boughton 2020
 
-Description here
+Parts of Server Module
+Patrick Jose Pereira
+April 2018
 '''
-
 import os
 import os.path
 import sys
 from pymavlink import mavutil, mavwp
 from MAVProxy.modules.lib import textconsole
-import errno
 import json
 import time
 import datetime
 import requests
-import serial
 import threading
-import random
-import geopy.distance
-import logging
-import logging.config
+
+
+from MAVProxy.modules.lib import mp_module
+
 
 from MAVProxy.modules.lib import mp_module
 from MAVProxy.modules.lib import mp_util
 from MAVProxy.modules.lib import mp_settings
 
-def nmea_to_json(line):
-    split = line.split('*')
-    data = split[0].split(',')
-    if data[0] == '$PDLMA':
-        return {
-            'voltage': float(data[1]),
-            'temperature': float(data[2]),
-            'pitch': float(data[3]),
-            'roll': float(data[4])
-        }
-    elif data[0][:5] == '$PDLM':
-        return {
-            'array_length': float(data[0][5]),
-            'time': data[1],
-            'hcp_conductivity': float(data[2]),
-            'hcp_inphase': float(data[3]),
-            'prp_conductivity': float(data[4]),
-            'prp_inphase': float(data[5])
-        }
+from .data_random import rand_connect
+from .data_em import em_connect
 
-
+from .local_server import LocalServer
+from .comm import comm
 
 
 def mavlink_to_dict(msg):
@@ -59,25 +42,14 @@ def mavlink_to_dict(msg):
 
 
 def mavlink_to_json(msg):
-    '''Translate mavlink python messages in json string
-    - from restserver module'''
+    """Translate mavlink python messages in json string
+    - from restserver module"""
     ret = '\"%s\": {' % msg._type
     for fieldname in msg._fieldnames:
         data = getattr(msg, fieldname)
         ret += '\"%s\" : \"%s\", ' % (fieldname, data)
     ret = ret[0:-2] + '}'
     return ret
-
-
-def mpstatus_to_json(status):
-    '''Translate MPStatus in json string - from restserver module'''
-    msg_keys = list(status.msgs.keys())
-    data = '{'
-    for key in msg_keys[:-1]:
-        data += mavlink_to_json(status.msgs[key]) + ','
-    data += mavlink_to_json(status.msgs[msg_keys[-1]])
-    data += '}'
-    return data
 
 
 class MavAckAlerts():
@@ -111,6 +83,9 @@ class MavAckAlerts():
 
 
 class ServerAlerts():
+    """
+    Capture vehicle alerts and report to API
+    """
     def __init__(self, remote_self):
         self.active = []
         self.remote_self = remote_self
@@ -163,7 +138,7 @@ class RemoteConsole(textconsole.SimpleConsole):
         self.server_alerts = ServerAlerts(self.remote_self)
 
     def write(self, text, fg='black', bg='white'):
-        '''write to the console'''
+        """write to the console"""
 
         # wrap in try in case bad requests from server
         try:
@@ -183,13 +158,19 @@ class RemoteConsole(textconsole.SimpleConsole):
         self.stored_values[name] = {"text": text, "fg": fg, "bg": bg, "row": row}
 
 
-class Remote(mp_module.MPModule):
+
+class CropqModule(mp_module.MPModule):
     def __init__(self, mpstate):
         """Initialise module"""
-        super(Remote, self).__init__(mpstate, "remote", "")
+        super(CropqModule, self).__init__(mpstate, "cropq", "")
 
         self.mpstate.console = RemoteConsole(self)
 
+        # configure local webserver
+        self.local_server = LocalServer(self)
+        self.local_server.start()
+
+        # configure API communication
         self.comm_interval = 10  # seconds
         self.comm_start = False
         self.api_url = None
@@ -197,23 +178,11 @@ class Remote(mp_module.MPModule):
         self.password = None
         self.vehicle_server_id = None
 
-        self.em_enabled = False
-        self.em_file = None
-        self.em_thread = False
-        self.em_dataset_id = None
-        self.em_last_point = None
-        self.em_min_log_distance = None
-        self.last_em_try = time.time()
+        # configure data collection
+        self.data_col_profiles = {}
 
-        self.rand_enabled = False
-        self.rand_file = None
-        self.rand_thread = False
-        self.rand_dataset_id = None
-        self.rand_last_point = None
-        self.rand_min_log_distance = None
-        self.last_rand_try = time.time()
 
-        self.datapoints = [];
+        self.datapoints = []
 
         self.last_comm = time.time()
 
@@ -231,67 +200,44 @@ class Remote(mp_module.MPModule):
 
         self.mav_ack_alerts = MavAckAlerts(self)
 
-        self.em_connection = None
-
         self.remote_settings = mp_settings.MPSettings(
             [('verbose', bool, False),
              ])
 
-        self.add_command('remote', self.cmd_remote, "remote module",
+        self.add_command('cropq', self.cmd_cropq, "cropq module",
                          ['set (LOGSETTING)', 'i (seconds)', 'interval (seconds)'])
 
     def usage(self):
         '''show help on command line options'''
         return "Usage: example <status|set>"
 
-    def cmd_remote(self, args):
+    def cmd_cropq(self, args):
         '''control behaviour of the module'''
         if len(args) == 0:
             print(self.usage())
+        elif args[0] == "load_config":
+            #try:
+            with open(args[1]) as config_file:
+                config = json.load(config_file)
+                self.api_url = config['local']['api']['url']
+                self.username = config['local']['api']['username']
+                self.password = config['local']['api']['password']
+                self.vehicle_server_id = int(config['local']['api']['vehicle_id'])
+                self.comm_interval = config['vehicle']['comm_interval_sec']
+                # data collection setup
+                self.data_collection_setup(config['vehicle']['data_collection'])
+                if config['local']['auto_comm_start']:
+                    print(f'Starting comm in {str(config["local"]["comm_pause_sec"])} seconds')
+                    time.sleep(config['local']['comm_pause_sec'])
+                    self.comm_start = True
+            #except Exception as e:
+            #    print('error loading config file', e)
         elif args[0] == "comm":
-            self.comm()
+            comm()
             self.api_url = args[1]
             self.username = args[2]
             self.password = args[3]
             self.vehicle_server_id = int(args[4])
-        elif args[0] == "comm_start":
-            # TODO: type check all arguments
-            self.api_url = args[1]
-            self.username = args[2]
-            self.password = args[3]
-            self.vehicle_server_id = int(args[4])
-            self.comm_interval = int(args[5])
-            try:
-                on_at_start = args[7].split(',')
-                for x in on_at_start:
-                    details = x.split('|')
-                    print(details)
-                    if details[0] == 'em':
-                        print('Enabling EM')
-                        self.em_enabled = True
-                        self.em_dataset_id = int(details[1])
-                        try:
-                            self.em_min_log_distance = int(details[2])
-                        except:
-                            print('No EM min log distance set - setting to 7')
-                            self.em_min_log_distance = 7
-                    if details[0] == 'rand':
-                        print('Enabling Random Number Generator')
-                        self.rand_enabled = True
-                        self.rand_dataset_id = int(details[1])
-                        try:
-                            self.rand_min_log_distance = int(details[2])
-                        except:
-                            print('No Rand min log distance set - setting to 7')
-                            self.rand_min_log_distance = 7
-            except Exception as e:
-                print(e)
-                pass
-            try:
-                time.sleep(args[6])
-                self.comm_start = True
-            except Exception as e:
-                self.comm_start = True
         elif args[0] == "comm_stop":
             self.comm_start = False
         elif args[0] == "set_comm_interval":
@@ -302,6 +248,24 @@ class Remote(mp_module.MPModule):
             self.remote_settings.command(args[1:])
         else:
             print(self.usage())
+
+    def mpstatus_to_json(self, status):
+        """Translate MPStatus in json string - from restserver module"""
+        msg_keys = list(status.msgs.keys())
+        data = '{'
+        for key in msg_keys[:-1]:
+            data += mavlink_to_json(status.msgs[key]) + ','
+        data += mavlink_to_json(status.msgs[msg_keys[-1]])
+        data += '}'
+        return data
+
+    def data_collection_setup(self, profile_list):
+        for profile in profile_list:
+            profile['file_name'] = None
+            profile['thread'] = None
+            profile['last_point'] = None
+            profile['last_try'] = time.time()
+            self.data_col_profiles[profile['profile_name']] = profile
 
     def download_mission_file(self, job, mission):
         url = f'{self.api_url}/jobs/{job}/missions/{mission}/text_file/'
@@ -341,7 +305,7 @@ class Remote(mp_module.MPModule):
         return text_to_save, text_to_send
 
     def mpstats_to_send(self):
-        status_dict = json.loads(mpstatus_to_json(self.mpstate.status))
+        status_dict = json.loads(self.mpstatus_to_json(self.mpstate.status))
         mpstats_to_send = []
 
         for key, value in status_dict.items():
@@ -413,196 +377,6 @@ class Remote(mp_module.MPModule):
                 self.update_direct_command(direct_command['id'], 1)
                 self.direct_command_queue.append(direct_command['id'])
 
-    def check_em_connection(self):
-        pass
-
-    def rand_connect(self):
-        while True:
-            try:
-                # generate random number and write to datastore and append to datapoints to send
-                r = random.random()
-                status_dict = json.loads(mpstatus_to_json(self.mpstate.status))
-                gps = status_dict['GPS_RAW_INT']
-                lat = int(gps['lat']) / 1.0e7
-                lon = int(gps['lon']) / 1.0e7
-                if int(gps['fix_type']) > 1:
-                    geom = f'POINT({str(lon)} {str(lat)})'
-                    distance = 0
-                    if self.rand_last_point:
-                        distance = geopy.distance.geodesic(self.rand_last_point, (lat, lon))
-                        print('DISTANCE', distance)
-                        if distance > self.rand_min_log_distance / 1000:
-                            self.datapoints.append({'dataset': self.rand_dataset_id, 'position': geom,
-                                                    'data': {'value': r, 'lat': lat, 'lon': lon}})
-                            self.rand_last_point = (lat, lon)
-                    else:
-                        self.rand_last_point = (lat, lon)
-                        self.datapoints.append({'dataset': self.rand_dataset_id, 'position': geom,
-                                                'data': {'value': r, 'lat': lat, 'lon': lon}})
-
-            except Exception as e:
-                print('Rand error', e)
-
-            time.sleep(2)
-
-
-    def em_connect(self):
-        connection = serial.Serial('/dev/ttyUSB0', 9600, timeout=2)
-        connection.write(b'%')
-        self.em_file = f'em_{datetime.datetime.utcnow().replace(microsecond=0).isoformat()}'
-
-        count = 0
-
-        while True:
-            try:
-                line1 = connection.readline().decode('utf-8')
-                line2 = connection.readline().decode('utf-8')
-                if '$' not in line1:
-                    print('$ not line line 1')
-                    connection.write(b'%')
-                    time.sleep(1)
-                    pass
-                else:
-                    json_data1 = nmea_to_json(line1)
-                    json_data2 = nmea_to_json(line2)
-                    part_line = {**json_data1, **json_data2}
-                    part_line['utc_datetime'] = datetime.datetime.utcnow().replace(microsecond=0).isoformat()
-                    full_line = part_line
-                    #try:
-                    status_dict = json.loads(mpstatus_to_json(self.mpstate.status))
-                    gps = status_dict['GPS_RAW_INT']
-                    lat = int(gps['lat']) / 1.0e7
-                    lon = int(gps['lon']) / 1.0e7
-                    full_line['lat'] = lat
-                    full_line['lon'] = lon 
-                    full_line['sats_visible'] = int(gps['satellites_visible'])
-                    full_line['sat_fix'] = int(gps['fix_type'])
-                    if int(gps['fix_type']) > 1:
-                        geom = f'POINT({str(lon)} {str(lat)})'
-                        distance = 0
-                        if self.em_last_point:
-                            distance = geopy.distance.geodesic(self.em_last_point, (lat, lon))
-                            print('DISTANCE', distance)
-                            if distance > self.em_min_log_distance / 1000:
-                                self.datapoints.append({'dataset': self.em_dataset_id, 'position': geom, 'data': full_line})
-                                self.em_last_point = (lat, lon)
-                        else:
-                            self.em_last_point = (lat, lon)
-                            self.datapoints.append({'dataset': self.em_dataset_id, 'position': geom, 'data': full_line})
-                    f = open(f'/home/pi/datastore/{self.em_file}.txt', 'a')
-                    f.write(json.dumps(full_line)+'\n')
-                    f.close()
-                    count = 0
-                    #time.sleep(1)
-            except Exception as e:
-                print('Problem accessing EM serial - this may resolve itself', count)
-                print(e)
-                count = count + 1
-                if count == 10:
-                    print('10 error in row - reconnect')
-                    break
-            time.sleep(0.2)
-
-        connection.close()
-        self.em_thread = False 
-
-    def comm(self):
-        filename = '/tmp/rover-log.txt'
-
-        if os.path.exists(filename):
-            append_write = 'a'  # append if already exists
-        else:
-            append_write = 'w'  # make a new file if not
-
-        with open(filename, append_write) as log:
-            status_dict = json.loads(mpstatus_to_json(self.mpstate.status))
-            try:
-                lat = int(status_dict['GPS_RAW_INT']['lat']) / 1.0e7
-                lon = int(status_dict['GPS_RAW_INT']['lon']) / 1.0e7
-                position = f'POINT({str(lon)} {str(lat)})'
-                fix_type = status_dict['GPS_RAW_INT']['fix_type']
-                sats_visible = status_dict['GPS_RAW_INT']['satellites_visible']
-                log.write(f'INFO -- comm to write -- {lat} {lon} {sats_visible}\n')
-            except Exception as e:
-                lat = None
-                lon = None
-                position = None
-                fix_type = None
-                sats_visible = None
-                log.write(f'ERROR 1 -- comm -- {e}\n')
-                print(e)
-
-            try:
-                system_status = status_dict['HEARTBEAT']['system_status']
-                custom_mode = status_dict['HEARTBEAT']['custom_mode']
-            except Exception as e:
-                log.write(f'ERROR 2 -- comm -- {e}\n')
-                system_status = None
-                custom_mode = None
-                print(e)
-
-            try:
-                heading = status_dict['VFR_HUD']['heading']
-                speed_kmh = float(status_dict['VFR_HUD']['groundspeed']) * 3.6
-            except Exception as e:
-                heading = None
-                speed_kmh = None
-                log.write(f'ERROR 1 -- comm -- {e}\n')
-                print(e)
-
-            text_to_save, text_to_send = self.console_text_to_send()
-            params_to_send = self.params_to_send()
-            mpstats_to_send = self.mpstats_to_send()
-
-            datapoints_freeze = self.datapoints
-
-            print('datapoints_freeze', datapoints_freeze)
-
-            data = {
-                "time_vehicle": datetime.datetime.utcnow().isoformat(),
-                "armed": self.is_armed(),
-                "position": position,
-                "heading": heading,
-                "speed": speed_kmh,
-                "packets": 0,
-                "fix_type": fix_type,
-                "sats_visible": sats_visible,
-                "system_status": system_status,
-                "custom_mode": custom_mode,
-                "console_texts": text_to_send,
-                "parameters": params_to_send,
-                "mpstats": mpstats_to_send,
-                "datapoints": datapoints_freeze
-            }
-
-            # print(data)
-
-            r = requests.post(f'{self.api_url}/vehicles/{self.vehicle_server_id}/heartbeats/',
-                              auth=(self.username, self.password),
-                              json=data
-                              )
-
-            if r.status_code == 201 or r.status_code == 200:
-                # update sent mpstats & params
-                self.status_text_sent += text_to_save
-                for param in params_to_send:
-                    self.params_last_sent[param['name']] = param['value']
-                for mpstat in mpstats_to_send:
-                    self.mpstats_last_sent[mpstat['name']] = mpstat['value']
-                for dp in datapoints_freeze:
-                    if dp in self.datapoints:
-                        self.datapoints.remove(dp)
-
-                # get new commands in response
-                response = r.json()
-                print(response)
-                log.write(f'INFO -- comm response -- {response}\n')
-                self.read_direct_commands(response['direct_commands'])
-            else:
-                print(r.status_code, r.content)
-                log.write(f'INFO -- comm response -- bad response from server -- {r.status_code} {r.content}\n')
-
-
 
     def direct_command_rover(self):
         direct_command_pk = self.direct_command_queue.pop()
@@ -645,7 +419,7 @@ class Remote(mp_module.MPModule):
         # send comm at set interval
         if now - self.last_comm > self.comm_interval and self.comm_start:
             self.last_comm = now
-            x = threading.Thread(target=self.comm)
+            x = threading.Thread(target=comm, args=(self, ))
             x.start()
 
         # pop another job off the queue
@@ -655,19 +429,21 @@ class Remote(mp_module.MPModule):
         # check to see if any active alerts have expired
         self.mpstate.console.server_alerts.check_timeout()
 
-        if now - self.last_em_try > 3 and self.em_enabled and not self.em_thread:
-            print('starting em serial')
-            self.em_thread = True;
-            self.last_em_try = now
-            y = threading.Thread(target=self.em_connect)
-            y.start()
+        # data collection
+        profile_keys = list(self.data_col_profiles.keys())
 
-        if now - self.last_rand_try > 3 and self.rand_enabled and not self.rand_thread:
-            print('start rand')
-            self.rand_thread = True
-            self.last_rand_try = now
-            z = threading.Thread(target=self.rand_connect)
-            z.start()
+        for profile_key in profile_keys:
+            profile = self.data_col_profiles[profile_key]
+            if now - profile['last_try'] > 3 and profile['on'] and not profile['thread']:
+                print(f'Starting {profile["profile_name"]}')
+                profile['thread'] = True
+                profile['last_try'] = now
+                if profile['profile_name'] == 'em':
+                    y = threading.Thread(target=em_connect, args=(self, ))
+                    y.start()
+                if profile['profile_name'] == 'rand':
+                    z = threading.Thread(target=rand_connect, args=(self, ))
+                    z.start()
 
     def mavlink_packet(self, m):
         '''handle mavlink packets'''
@@ -702,4 +478,4 @@ class Remote(mp_module.MPModule):
 
 def init(mpstate):
     '''initialise module'''
-    return Remote(mpstate)
+    return CropqModule(mpstate)
