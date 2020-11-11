@@ -12,7 +12,7 @@ if mp_util.has_wxpython:
 class ParamState:
     '''this class is separated to make it possible to use the parameter
        functions on a secondary connection'''
-    def __init__(self, mav_param, logdir, vehicle_name, parm_file, mpstate):
+    def __init__(self, mav_param, logdir, vehicle_name, parm_file, mpstate, sysid):
         self.mav_param_set = set()
         self.mav_param_count = 0
         self.param_period = mavutil.periodic_event(1)
@@ -29,6 +29,7 @@ class ParamState:
         self.ftp_failed = False
         self.ftp_started = False
         self.mpstate = mpstate
+        self.sysid = sysid
 
     def use_ftp(self):
         '''return true if we should try ftp for download'''
@@ -120,7 +121,7 @@ class ParamState:
                     master.param_fetch_all()
                 else:
                     self.ftp_start()
-            elif self.mav_param_count != 0 and len(self.mav_param_set) != self.mav_param_count:
+            elif not self.ftp_started and self.mav_param_count != 0 and len(self.mav_param_set) != self.mav_param_count:
                 if master.time_since('PARAM_VALUE') >= 1 or force:
                     diff = set(range(self.mav_param_count)).difference(self.mav_param_set)
                     count = 0
@@ -135,8 +136,8 @@ class ParamState:
     def param_help_download(self):
         '''download XML files for parameters'''
         files = []
-        for vehicle in ['APMrover2', 'ArduCopter', 'ArduPlane', 'ArduSub', 'AntennaTracker']:
-            url = 'http://autotest.ardupilot.org/Parameters/%s/apm.pdef.xml' % vehicle
+        for vehicle in ['Rover', 'ArduCopter', 'ArduPlane', 'ArduSub', 'AntennaTracker']:
+            url = 'http://autotest.ardupilot.org/Parameters/%s/apm.pdef.xml.gz' % vehicle
             path = mp_util.dot_mavproxy("%s.xml" % vehicle)
             files.append((url, path))
             url = 'http://autotest.ardupilot.org/%s-defaults.parm' % vehicle
@@ -204,6 +205,53 @@ class ParamState:
         for param in contains.keys():
             print("%s" % (param,))
 
+    def param_check(self, args):
+        '''Check through parameters for obvious misconfigurations'''
+        problems_found = False
+        htree = self.param_help_tree()
+        if htree is None:
+            return
+        for param in self.mav_param.keys():
+            if param.startswith("SIM_"):
+                # no documentation for these ATM
+                continue
+            value = self.mav_param[param]
+#            print("%s: %s" % (param, str(value)))
+            try:
+                help = htree[param]
+            except KeyError:
+                print("%s: not found in documentation" % (param,))
+                problems_found = True
+                continue
+
+            # we'll ignore the Values field if there's a bitmask field
+            # involved as they're usually just examples.
+            has_bitmask = False
+            for f in getattr(help, "field", []):
+                if f.get('name') == "Bitmask":
+                    has_bitmask = True
+                    break
+            if not has_bitmask:
+                values = self.get_Values_from_help(help)
+                if len(values) == 0:
+                    # no prescribed values list
+                    continue
+                value_values = [float(x.get("code")) for x in values]
+                if value not in value_values:
+                    print("%s: value %f not in Values (%s)" %
+                          (param, value, str(value_values)))
+                    problems_found = True
+
+        if problems_found:
+            print("Remember to `param download` before trusting the checking!  Also, remember that parameter documentation is for *master*!")
+
+    def get_Values_from_help(self, help):
+        children = help.getchildren()
+        if len(children) == 0:
+            return []
+        vchild = children[0]
+        return vchild.getchildren()
+
     def param_help(self, args):
         '''show help on a parameter'''
         if len(args) == 0:
@@ -230,9 +278,7 @@ class ParamState:
                     # The entry "values" has been blatted by a cython
                     # function at this point, so we instead get the
                     # "values" by offset rather than name.
-                    children = help.getchildren()
-                    vchild = children[0]
-                    values = vchild.getchildren()
+                    values = self.get_Values_from_help(help)
                     if len(values):
                         print("\nValues: ")
                         for v in values:
@@ -251,9 +297,42 @@ class ParamState:
         ftp = self.mpstate.module('ftp')
         if ftp is None:
             self.ftp_failed = True
+            self.ftp_started = False
             return
         self.ftp_started = True
         ftp.cmd_get(["@PARAM/param.pck"], callback=self.ftp_callback)
+
+    def log_params(self, params):
+        '''log PARAM_VALUE messages so that we can extract parameters from a tlog when using ftp download'''
+        if not self.mpstate.logqueue:
+            return
+        usec = int(time.time() * 1.0e6)
+        idx = 0
+        mav = self.mpstate.master().mav
+        editor = self.mpstate.module('paramedit')
+        for (name, v, ptype) in params:
+            p = mavutil.mavlink.MAVLink_param_value_message(name,
+                                                            float(v),
+                                                            mavutil.mavlink.MAV_PARAM_TYPE_REAL32,
+                                                            len(params),
+                                                            idx)
+            idx += 1
+            # log PARAM_VALUE using the source vehicles sysid but MAV_COMP_ID_MISSIONPLANNER, to allow
+            # us to tell that it came from the GCS, but to not corrupt the sequence numbers
+            id_saved = (mav.srcSystem, mav.srcComponent)
+            mav.srcSystem = self.sysid[0]
+            mav.srcComponent = mavutil.mavlink.MAV_COMP_ID_MISSIONPLANNER
+            try:
+                buf = p.pack(mav)
+                self.mpstate.logqueue.put(bytearray(struct.pack('>Q', usec) + buf))
+                # also give to param editor so it can update for changes
+                if editor:
+                    editor.mavlink_packet(p)
+            except Exception:
+                pass
+            (mav.srcSystem, mav.srcComponent) = id_saved
+
+
 
     def ftp_callback(self, fh):
         '''callback from ftp fetch of parameters'''
@@ -339,6 +418,9 @@ class ParamState:
         self.ftp_failed = False
         self.mpstate.console.set_status('Params', 'Param %u/%u' % (total_params, total_params))
         print("Received %u parameters (ftp)" % total_params)
+        if self.logdir is not None:
+            self.mav_param.save(os.path.join(self.logdir, self.parm_file), '*', verbose=True)
+        self.log_params(params)
 
     def fetch_all(self, master):
         '''force refetch of parameters'''
@@ -351,7 +433,7 @@ class ParamState:
     def handle_command(self, master, mpstate, args):
         '''handle parameter commands'''
         param_wildcard = "*"
-        usage="Usage: param <fetch|ftp|save|set|show|load|preload|forceload|diff|download|help>"
+        usage="Usage: param <fetch|ftp|save|set|show|load|preload|forceload|diff|download|check|help>"
         if len(args) < 1:
             print(usage)
             return
@@ -462,6 +544,8 @@ class ParamState:
             self.param_help_download()
         elif args[0] == "apropos":
             self.param_apropos(args[1:])
+        elif args[0] == "check":
+            self.param_check(args[1:])
         elif args[0] == "help":
             self.param_help(args[1:])
         elif args[0] == "set_xml_filepath":
@@ -498,11 +582,11 @@ class ParamModule(mp_module.MPModule):
                                          MPMenuItem('Load', 'Load', '# param load ',
                                                     handler=MPMenuCallFileDialog(flags=('open',),
                                                                                  title='Param Load',
-                                                                                 wildcard='*.parm')),
+                                                                                 wildcard='ParmFiles(*.parm,*.param)|*.parm;*.param')),
                                          MPMenuItem('Save', 'Save', '# param save ',
                                                     handler=MPMenuCallFileDialog(flags=('save', 'overwrite_prompt'),
                                                                                  title='Param Save',
-                                                                                 wildcard='*.parm'))])
+                                                                                 wildcard='ParmFiles(*.parm,*.param)|*.parm;*.param'))])
 
     def get_component_id_list(self, system_id):
         '''get list of component IDs with parameters for a given system ID'''
@@ -523,7 +607,7 @@ class ParamModule(mp_module.MPModule):
         if sysid not in [(0,0),(1,1),(1,0)]:
 
             fname = 'mav_%u_%u.parm' % (sysid[0], sysid[1])
-        self.pstate[sysid] = ParamState(self.mpstate.mav_param_by_sysid[sysid], self.logdir, self.vehicle_name, fname, self.mpstate)
+        self.pstate[sysid] = ParamState(self.mpstate.mav_param_by_sysid[sysid], self.logdir, self.vehicle_name, fname, self.mpstate, sysid)
         if self.continue_mode and self.logdir is not None:
             parmfile = os.path.join(self.logdir, fname)
             if os.path.exists(parmfile):

@@ -1,7 +1,7 @@
 from setuptools import setup
-import os, platform
+import os, platform, sys
 
-version = "1.8.19"
+version = "1.8.22"
 
 def package_files(directory):
     paths = []
@@ -44,6 +44,12 @@ if platform.system() == "Darwin":
                          'future',
                          'wxPython'])
 
+if platform.system() == "Windows" and sys.version_info >= (3, 0):
+    # on MacOS we can have a more complete requirements list
+    requirements.extend(['prompt_toolkit'])
+elif platform.system() == "Windows":
+    requirements.extend(['pyreadline'])
+
 setup(name='MAVProxy',
       version=version,
       zip_safe=False,
@@ -57,7 +63,7 @@ control modules. MAVProxy is extensible via a modules system - see the modules
 subdirectory for some example modules. MAVProxy was developed by CanberraUAV
 for use in the 2012 Outback Challenge, and includes a module for the
 CanberraUAV search and rescue system. See
-http://ardupilot.github.io/MAVProxy/ for more information
+https://ardupilot.org/mavproxy/index.html for more information
 on how to use MAVProxy.''',
       url='https://github.com/ArduPilot/MAVProxy',
       author='Andrew Tridgell',

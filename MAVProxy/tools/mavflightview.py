@@ -184,8 +184,8 @@ def colour_for_point(mlog, point, instance, options):
 #    v = mavutil.evaluate_expression(source, mlog.messages)
 
     if v is None:
-        v = 0
-    elif isinstance(v, str):
+        return v
+    if isinstance(v, str):
         print("colour expression returned a string: %s" % v)
         sys.exit(1)
     elif v < 0:
@@ -329,15 +329,17 @@ def mavflightview_mav(mlog, options=None, flightmode_selections=[]):
             idx += 1
         elif (idx < len(flightmode_selections) and flightmode_selections[idx]) or all_false or len(flightmode_selections) == 0:
             used_flightmodes[mlog.flightmode] = 1
+            (lat, lng) = (None,None)
             if type in ['GPS','GPS2']:
                 status = getattr(m, 'Status', None)
+                nsats = getattr(m, 'NSats', None)
                 if status is None:
                     status = getattr(m, 'FixType', None)
                     if status is None:
                         print("Can't find status on GPS message")
                         print(m)
                         break
-                if status < 2:
+                if status < 2 and nsats < 5:
                     continue
                 # flash log
                 lat = m.Lat
@@ -375,8 +377,23 @@ def mavflightview_mav(mlog, options=None, flightmode_selections=[]):
             elif type == 'SIM':
                 (lat, lng) = (m.Lat, m.Lng)
             else:
-                lat = m.lat * 1.0e-7
-                lng = m.lon * 1.0e-7
+                if hasattr(m,'Lat'):
+                    lat = m.Lat
+                if hasattr(m,'Lon'):
+                    lng = m.Lon
+                if hasattr(m,'Lng'):
+                    lng = m.Lng
+                if hasattr(m,'lat'):
+                    lat = m.lat * 1.0e-7
+                if hasattr(m,'lon'):
+                    lng = m.lon * 1.0e-7
+                if hasattr(m,'latitude'):
+                    lat = m.latitude * 1.0e-7
+                if hasattr(m,'longitude'):
+                    lng = m.longitude * 1.0e-7
+
+            if lat is None or lng is None:
+                continue
 
             # automatically add new types to instances
             if type not in instances:
@@ -385,14 +402,20 @@ def mavflightview_mav(mlog, options=None, flightmode_selections=[]):
                     path.append([])
             instance = instances[type]
 
-            if abs(lat)>0.01 or abs(lng)>0.01:
-                colour = colour_for_point(mlog, (lat, lng), instance, options)
-                tdays = grapher.timestamp_to_days(m._timestamp)
-                point = (lat, lng, colour, tdays)
+            # only plot thing we have a valid-looking location for:
+            if abs(lat)<=0.01 and abs(lng)<=0.01:
+                continue
 
-                if options.rate == 0 or not type in last_timestamps or m._timestamp - last_timestamps[type] > 1.0/options.rate:
-                    last_timestamps[type] = m._timestamp
-                    path[instance].append(point)
+            colour = colour_for_point(mlog, (lat, lng), instance, options)
+            if colour is None:
+                continue
+
+            tdays = grapher.timestamp_to_days(m._timestamp)
+            point = (lat, lng, colour, tdays)
+
+            if options.rate == 0 or not type in last_timestamps or m._timestamp - last_timestamps[type] > 1.0/options.rate:
+                last_timestamps[type] = m._timestamp
+                path[instance].append(point)
     if len(path[0]) == 0:
         print("No points to plot")
         return None

@@ -354,9 +354,11 @@ class MiscModule(mp_module.MPModule):
     def cmd_devid(self, args):
         '''decode device IDs from parameters'''
         for p in self.mav_param.keys():
-            if p.startswith('COMPASS_DEV_ID'):
+            if p.startswith('COMPASS_DEV_ID') or p.startswith('COMPASS_PRIO'):
                 mp_util.decode_devid(self.mav_param[p], p)
             if p.startswith('INS_') and p.endswith('_ID'):
+                mp_util.decode_devid(self.mav_param[p], p)
+            if p.startswith('GND_BARO') and p.endswith('_ID'):
                 mp_util.decode_devid(self.mav_param[p], p)
 
     def cmd_setorigin(self, args):

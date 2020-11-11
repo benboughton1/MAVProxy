@@ -34,6 +34,7 @@ class MapModule(mp_module.MPModule):
         self.moving_rally = None
         self.mission_list = None
         self.icon_counter = 0
+        self.circle_counter = 0
         self.draw_line = None
         self.draw_callback = None
         self.have_global_position = False
@@ -47,6 +48,7 @@ class MapModule(mp_module.MPModule):
             [ ('showgpspos', int, 1),
               ('showgps2pos', int, 1),
               ('showsimpos', int, 0),
+              ('showahrspos', int, 1),
               ('showahrs2pos', int, 0),
               ('showahrs3pos', int, 0),
               ('brightness', float, 1),
@@ -73,12 +75,13 @@ class MapModule(mp_module.MPModule):
                                                                 'set (MAPSETTING)',
                                                                 'zoom',
                                                                 'center',
-                                                                'follow'])
+                                                                'follow',
+                                                                'clear'])
         self.add_completion_function('(MAPSETTING)', self.map_settings.completion)
 
         self.default_popup = MPMenuSubMenu('Popup', items=[])
         self.add_menu(MPMenuItem('Fly To', 'Fly To', '# guided ',
-                                 handler=MPMenuCallTextDialog(title='Altitude (m)', default=100)))
+                                 handler=MPMenuCallTextDialog(title='Altitude (m)', default=self.mpstate.settings.guidedalt)))
         self.add_menu(MPMenuItem('Set Home', 'Set Home', '# map sethomepos '))
         self.add_menu(MPMenuItem('Set Home (with height)', 'Set Home', '# map sethome '))
         self.add_menu(MPMenuItem('Set Origin', 'Set Origin', '# map setoriginpos '))
@@ -157,6 +160,35 @@ class MapModule(mp_module.MPModule):
                                                            (float(lat),float(lon)),
                                                    icon, layer=3, rotation=0, follow=False))
                 self.icon_counter += 1
+        elif args[0] == "circle":
+            if len(args) < 4:
+                # map circle -27.70533373 153.23404844 5 red
+                print("Usage: map circle <lat> <lon> <radius> <colour>")
+            else:
+                lat = args[1]
+                lon = args[2]
+                radius = args[3]
+                colour = 'red'
+                if len(args) > 4:
+                    colour = args[4]
+                if colour == "red":
+                    colour = (255,0,0)
+                elif colour == "green":
+                    colour = (0,255,0)
+                elif colour == "blue":
+                    colour = (0,0,255)
+                else:
+                    colour = eval(colour)
+                circle = mp_slipmap.SlipCircle(
+                    "circle %u" % self.circle_counter,
+                    3,
+                    (float(lat), float(lon)),
+                    float(radius),
+                    colour,
+                    linewidth=1,
+                )
+                self.map.add_object(circle)
+                self.circle_counter += 1
         elif args[0] == "set":
             self.map_settings.command(args[1:])
             self.map.add_object(mp_slipmap.SlipBrightness(self.map_settings.brightness))
@@ -174,6 +206,8 @@ class MapModule(mp_module.MPModule):
             self.cmd_center(args)
         elif args[0] == "follow":
             self.cmd_follow(args)
+        elif args[0] == "clear":
+            self.cmd_clear(args)
         else:
             print("usage: map <icon|set>")
 
@@ -615,7 +649,12 @@ class MapModule(mp_module.MPModule):
             return
         follow = int(args[1])
         self.map.set_follow(follow)
-        
+
+    def cmd_clear(self, args):
+        '''clear displayed vehicle icons'''
+        self.map.add_object(mp_slipmap.SlipClearLayer(3))
+        self.have_vehicle = {}
+
     def set_secondary_vehicle_position(self, m):
         '''show 2nd vehicle on map'''
         if m.get_type() != 'GLOBAL_POSITION_INT':
@@ -695,7 +734,7 @@ class MapModule(mp_module.MPModule):
                 self.create_vehicle_icon('GPS2' + vehicle, 'green')
                 self.map.set_position('GPS2' + vehicle, (lat, lon), rotation=m.cog*0.01)
 
-        elif mtype == 'GLOBAL_POSITION_INT':
+        elif mtype == 'GLOBAL_POSITION_INT' and self.map_settings.showahrspos:
             (lat, lon, heading) = (m.lat*1.0e-7, m.lon*1.0e-7, m.hdg*0.01)
             self.lat_lon[m.get_srcSystem()] = (lat,lon)
             if abs(lat) > 1.0e-3 or abs(lon) > 1.0e-3:
@@ -707,14 +746,6 @@ class MapModule(mp_module.MPModule):
                     label = None
                 self.map.set_position('Pos' + vehicle, (lat, lon), rotation=heading, label=label, colour=(255,255,255))
                 self.map.set_follow_object('Pos' + vehicle, self.is_primary_vehicle(m))
-
-        elif mtype == 'LOCAL_POSITION_NED' and not self.have_global_position:
-            (lat, lon) = mp_util.gps_offset(0, 0, m.x, m.y)
-            self.lat_lon[m.get_srcSystem()] = (lat,lon)
-            heading = math.degrees(math.atan2(m.vy, m.vx))
-            self.create_vehicle_icon('Pos' + vehicle, 'red', follow=True)
-            self.map.set_position('Pos' + vehicle, (lat, lon), rotation=heading)
-            self.map.set_follow_object('Pos' + vehicle, self.is_primary_vehicle(m))
 
         elif mtype == 'HOME_POSITION':
             (lat, lon) = (m.latitude*1.0e-7, m.longitude*1.0e-7)

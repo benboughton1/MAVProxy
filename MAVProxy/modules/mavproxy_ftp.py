@@ -265,6 +265,7 @@ class FTPModule(mp_module.MPModule):
         elif self.burst_size > 239:
             self.burst_size = 239
         enc_fname = bytearray(fname, 'ascii')
+        self.open_retries = 0
         op = FTP_OP(self.seq, self.session, OP_OpenFileRO, len(enc_fname), 0, 0, 0, enc_fname)
         self.send(op)
 
@@ -371,6 +372,16 @@ class FTPModule(mp_module.MPModule):
             else:
                 self.fh.write(op.payload)
             if op.burst_complete:
+                if op.size > 0 and op.size < self.burst_size:
+                    # a burst complete with non-zero size and less than burst packet size
+                    # means EOF
+                    if not self.reached_eof and self.ftp_settings.debug > 0:
+                        print("EOF at %u with %u gaps t=%.2f" % (self.fh.tell(), len(self.read_gaps), time.time() - self.op_start))
+                    self.reached_eof = True
+                    if self.check_read_finished():
+                        return
+                    self.check_read_send()
+                    return
                 more = self.last_op
                 more.offset = op.offset + op.size
                 if self.ftp_settings.debug > 0:
@@ -707,8 +718,14 @@ class FTPModule(mp_module.MPModule):
         now = time.time()
 
         # see if we lost an open reply
-        if self.op_start is not None and now - self.op_start > 2.0 and self.last_op.opcode == OP_OpenFileRO:
+        if self.op_start is not None and now - self.op_start > 1.0 and self.last_op.opcode == OP_OpenFileRO:
             self.op_start = now
+            self.open_retries += 1
+            if self.open_retries > 2:
+                # fail the get
+                self.op_start = None
+                self.terminate_session()
+                return
             if self.ftp_settings.debug > 0:
                 print("FTP: retry open")
             send_op = self.last_op

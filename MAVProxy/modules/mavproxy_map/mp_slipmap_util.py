@@ -142,7 +142,7 @@ class SlipArrow(SlipObject):
 
 class SlipCircle(SlipObject):
     '''a circle to display on the map'''
-    def __init__(self, key, layer, latlon, radius, color, linewidth, arrow = False, popup_menu=None):
+    def __init__(self, key, layer, latlon, radius, color, linewidth, arrow = False, popup_menu=None, start_angle=None, end_angle=None, rotation=None, add_radii=False):
         SlipObject.__init__(self, key, layer, popup_menu=popup_menu)
         self.latlon = latlon
         if radius < 0:
@@ -153,6 +153,10 @@ class SlipCircle(SlipObject):
         self.color = color
         self.linewidth = linewidth
         self.arrow = arrow
+        self.start_angle = start_angle
+        self.end_angle = end_angle
+        self.rotation = rotation
+        self.add_radii = add_radii
 
     def draw(self, img, pixmapper, bounds):
         if self.hidden:
@@ -165,7 +169,18 @@ class SlipCircle(SlipObject):
         dis_px = math.sqrt(float(center_px[1] - ref_px[1]) ** 2.0)
         pixels_per_meter = dis_px / dis
         radius_px = int(self.radius * pixels_per_meter)
-        cv2.circle(img, center_px, radius_px, self.color, self.linewidth)
+        if self.start_angle is not None:
+            axes = (radius_px, radius_px)
+            cv2.ellipse(img, center_px, axes, self.rotation, self.start_angle, self.end_angle, self.color, self.linewidth)
+            if self.add_radii:
+                rimpoint1 = (center_px[0] + int(radius_px * math.cos(math.radians(self.rotation+self.start_angle))),
+                             center_px[1] + int(radius_px * math.sin(math.radians(self.rotation+self.start_angle))))
+                rimpoint2 = (center_px[0] + int(radius_px * math.cos(math.radians(self.rotation+self.end_angle))),
+                             center_px[1] + int(radius_px * math.sin(math.radians(self.rotation+self.end_angle))))
+                cv2.line(img, center_px, rimpoint1, self.color, self.linewidth)
+                cv2.line(img, center_px, rimpoint2, self.color, self.linewidth)
+        else:
+            cv2.circle(img, center_px, radius_px, self.color, self.linewidth)
         if self.arrow:
             SlipArrow(self.key, self.layer, (center_px[0]-radius_px, center_px[1]),
                       self.color, self.linewidth, 0, reverse = self.reverse).draw(img)

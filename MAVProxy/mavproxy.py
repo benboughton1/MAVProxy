@@ -34,6 +34,7 @@ except ImportError:
 from builtins import input
 
 from MAVProxy.modules.lib import textconsole
+from MAVProxy.modules.lib import mp_util
 from MAVProxy.modules.lib import rline
 from MAVProxy.modules.lib import mp_module
 from MAVProxy.modules.lib import dumpstacks
@@ -47,10 +48,6 @@ try:
       multiproc.freeze_support()
       from pymavlink import mavwp, mavutil
       import matplotlib, HTMLParser
-      try:
-            import readline
-      except ImportError:
-            import pyreadline as readline
 except Exception:
       pass
 
@@ -98,7 +95,7 @@ class MPStatus(object):
         self.last_apm_msg = None
         self.last_apm_msg_time = 0
         self.statustexts_by_sysidcompid = {}
-        self.highest_msec = 0
+        self.highest_msec = {}
         self.have_gps_lock = False
         self.lost_gps_lock = False
         self.last_gps_lock = 0
@@ -161,11 +158,27 @@ class MPStatus(object):
             f.write('MAV Errors: %u\n' % self.mav_error)
             f.write(str(self.gps)+'\n')
         for m in sorted(self.msgs.keys()):
-            if pattern is not None and not fnmatch.fnmatch(str(m).upper(), pattern.upper()):
+            if pattern is not None:
+                if not fnmatch.fnmatch(str(m).upper(), pattern.upper()):
+                    continue
+                if getattr(self.msgs[m], '_instance_field', None) is not None and m.find('[') == -1 and pattern.find('*') != -1:
+                    # only show instance versions for patterns
+                    continue
+            msg = None
+            sysid = mpstate.settings.target_system
+            for mav in mpstate.mav_master:
+                if not sysid in mav.sysid_state:
+                    continue
+                if not m in mav.sysid_state[sysid].messages:
+                    continue
+                msg2 = mav.sysid_state[sysid].messages[m]
+                if msg is None or msg2._timestamp > msg._timestamp:
+                    msg = msg2
+            if msg is None:
                 continue
             if verbose:
                 try:
-                    mavutil.dump_message_verbose(f, self.msgs[m])
+                    mavutil.dump_message_verbose(f, msg)
                     f.write("\n")
                 except AttributeError as e:
                     if "has no attribute 'dump_message_verbose'" in str(e):
@@ -173,7 +186,7 @@ class MPStatus(object):
                     else:
                         raise e
             else:
-                f.write("%u: %s\n" % (self.msg_count[m], str(self.msgs[m])))
+                f.write("%u: %s\n" % (self.msg_count[m], str(msg)))
 
     def write(self):
         '''write status to status.txt'''
@@ -246,11 +259,12 @@ class MPState(object):
               MPSetting('wpalt', int, 100, 'Default WP Altitude', range=(0,10000), increment=1),
               MPSetting('rallyalt', int, 90, 'Default Rally Altitude', range=(0,10000), increment=1),
               MPSetting('terrainalt', str, 'Auto', 'Use terrain altitudes', choice=['Auto','True','False']),
+              MPSetting('guidedalt', int, 100, 'Default "Fly To" Altitude', range=(0,10000), increment=1),
               MPSetting('rally_breakalt', int, 40, 'Default Rally Break Altitude', range=(0,10000), increment=1),
               MPSetting('rally_flags', int, 0, 'Default Rally Flags', range=(0,10000), increment=1),
 
               MPSetting('source_system', int, 255, 'MAVLink Source system', range=(0,255), increment=1, tab='MAVLink'),
-              MPSetting('source_component', int, 0, 'MAVLink Source component', range=(0,255), increment=1),
+              MPSetting('source_component', int, 230, 'MAVLink Source component', range=(0,255), increment=1),
               MPSetting('target_system', int, 0, 'MAVLink target system', range=(0,255), increment=1),
               MPSetting('target_component', int, 0, 'MAVLink target component', range=(0,255), increment=1),
               MPSetting('state_basedir', str, None, 'base directory for logs and aircraft directories'),
@@ -326,12 +340,28 @@ class MPState(object):
             return self.public_modules[name]
         return None
 
-    def master(self):
+    def master(self, target_sysid = -1):
         '''return the currently chosen mavlink master object'''
         if len(self.mav_master) == 0:
               return None
         if self.settings.link > len(self.mav_master):
             self.settings.link = 1
+
+        if target_sysid != -1:
+            # if we're looking for a specific system ID then try to find best
+            # link for that
+            best_link = None
+            best_timestamp = 0
+            for m in self.mav_master:
+                try:
+                    tstamp = m.sysid_state[target_sysid].messages['HEARTBEAT']._timestamp
+                except Exception:
+                    continue
+                if tstamp > best_timestamp:
+                    best_link = m
+                    best_timestamp = tstamp
+            if best_link is not None:
+                return best_link
 
         # try to use one with no link error
         if not self.mav_master[self.settings.link-1].linkerror:
@@ -782,8 +812,9 @@ def process_mavlink(slave):
         return
     if mpstate.settings.mavfwd and not mpstate.status.setup_mode:
         for m in msgs:
+            target_sysid = getattr(m, 'target_system', -1)
             mbuf = m.get_msgbuf()
-            mpstate.master().write(mbuf)
+            mpstate.master(target_sysid).write(mbuf)
             if mpstate.logqueue:
                 usec = int(time.time() * 1.0e6)
                 mpstate.logqueue.put(bytearray(struct.pack('>Q', usec) + m.get_msgbuf()))
@@ -1086,7 +1117,7 @@ def input_loop():
     '''wait for user input'''
     while mpstate.status.exit != True:
         try:
-            line = input(mpstate.rl.prompt)
+            line = mpstate.rl.input()
             mpstate.input_queue.put(line)
         except (EOFError, IOError):
             mpstate.status.exit = True
@@ -1163,7 +1194,7 @@ if __name__ == '__main__':
     parser.add_option("--source-system", dest='SOURCE_SYSTEM', type='int',
                       default=255, help='MAVLink source system for this GCS')
     parser.add_option("--source-component", dest='SOURCE_COMPONENT', type='int',
-                      default=0, help='MAVLink source component for this GCS')
+                      default=230, help='MAVLink source component for this GCS')
     parser.add_option("--target-system", dest='TARGET_SYSTEM', type='int',
                       default=0, help='MAVLink target master system')
     parser.add_option("--target-component", dest='TARGET_COMPONENT', type='int',
@@ -1230,7 +1261,7 @@ if __name__ == '__main__':
             import pkg_resources
             version = pkg_resources.require("mavproxy")[0].version
         except:
-            start_script = os.path.join(os.environ['LOCALAPPDATA'], "MAVProxy", "version.txt")
+            start_script = mp_util.dot_mavproxy("version.txt")
             f = open(start_script, 'r')
             version = f.readline()
 
@@ -1360,11 +1391,10 @@ if __name__ == '__main__':
         process_stdin('module load map')
 
     start_scripts = []
-    if 'HOME' in os.environ and not opts.setup:
-        start_script = os.path.join(os.environ['HOME'], ".mavinit.scr")
-        start_scripts.append(start_script)
-    if 'LOCALAPPDATA' in os.environ and not opts.setup:
-        start_script = os.path.join(os.environ['LOCALAPPDATA'], "MAVProxy", "mavinit.scr")
+    if not opts.setup:
+        if 'HOME' in os.environ:
+            start_scripts.append(os.path.join(os.environ['HOME'], ".mavinit.scr"))
+        start_script = mp_util.dot_mavproxy("mavinit.scr")
         start_scripts.append(start_script)
     if (mpstate.settings.state_basedir is not None and
         opts.aircraft is not None):

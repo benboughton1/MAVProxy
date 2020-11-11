@@ -37,6 +37,17 @@ flightmodes = None
 # Global var to hold the GUI menu element
 TopMenu = None
 
+def xml_unescape(e):
+    '''unescape < amd >'''
+    e = e.replace('&gt;', '>')
+    e = e.replace('&lt;', '<')
+    return e
+
+def xml_escape(e):
+    '''escape < amd >'''
+    e = e.replace('>', '&gt;')
+    e = e.replace('<', '&lt;')
+    return e
 
 class MEStatus(object):
     '''status object to conform with mavproxy structure for modules'''
@@ -207,9 +218,19 @@ def expression_ok(expression, msgs=None):
         msgs = mestate.status.msgs
     for f in fields:
         try:
+            if f.endswith(">"):
+                a2 = f.rfind("<")
+                if a2 != -1:
+                    f = f[:a2]
             if f.endswith(':2'):
                 f = f[:-2]
-            if mavutil.evaluate_expression(f, msgs) is None:
+            if f[-1] == '}':
+                # avoid passing nocondition unless needed to allow us to work witih older
+                # pymavlink versions
+                res = mavutil.evaluate_expression(f, msgs, nocondition=True)
+            else:
+                res = mavutil.evaluate_expression(f, msgs)
+            if res is None:
                 expression_ok = False
         except Exception:
             expression_ok = False
@@ -228,15 +249,19 @@ def load_graph_xml(xml, filename, load_all=False):
         return []
     if not hasattr(root, 'graph'):
         return []
+    names = set()
     for g in root.graph:
         name = g.attrib['name']
         expressions = [e.text for e in g.expression]
         if load_all:
-            ret.append(GraphDefinition(name, e, g.description.text, expressions, filename))
+            if not name in names:
+                ret.append(GraphDefinition(name, expressions[0], g.description.text, expressions, filename))
+            names.add(name)
             continue
         if have_graph(name):
             continue
         for e in expressions:
+            e = xml_unescape(e)
             if expression_ok(e):
                 ret.append(GraphDefinition(name, e, g.description.text, expressions, filename))
                 break
@@ -246,16 +271,10 @@ def load_graphs():
     '''load graphs from mavgraphs.xml'''
     mestate.graphs = []
     gfiles = ['mavgraphs.xml']
-    if 'HOME' in os.environ:
-        for dirname, dirnames, filenames in os.walk(os.path.join(os.environ['HOME'], ".mavproxy")):
-            for filename in filenames:
-                if filename.lower().endswith('.xml'):
-                    gfiles.append(os.path.join(dirname, filename))
-    elif 'LOCALAPPDATA' in os.environ:
-        for dirname, dirnames, filenames in os.walk(os.path.join(os.environ['LOCALAPPDATA'], "MAVProxy")):
-            for filename in filenames:
-                if filename.lower().endswith('.xml'):
-                    gfiles.append(os.path.join(dirname, filename))
+    for dirname, dirnames, filenames in os.walk(mp_util.dot_mavproxy()):
+        for filename in filenames:
+            if filename.lower().endswith('.xml'):
+                gfiles.append(os.path.join(dirname, filename))
 
     for file in gfiles:
         if not os.path.exists(file):
@@ -339,6 +358,7 @@ def cmd_map(args):
     options._flightmodes = mestate.mlog._flightmodes
     options.show_flightmode_legend = mestate.settings.show_flightmode
     options.colour_source='flightmode'
+    options.nkf_sample = 1
     if len(args) > 0:
         options.types = ','.join(args)
         if len(options.types) > 1:
@@ -390,27 +410,14 @@ def cmd_fft(args):
 def save_graph(graphdef):
     '''save a graph as XML'''
     if graphdef.filename is None:
-        if 'HOME' in os.environ:
-            dname = os.path.join(os.environ['HOME'], '.mavproxy')
-            if os.path.exists(dname):
-                mp_util.mkdir_p(dname)
-                graphdef.filename = os.path.join(dname, 'mavgraphs.xml')
-        elif 'LOCALAPPDATA' in os.environ:
-            dname = os.path.join(os.environ['LOCALAPPDATA'], 'MAVProxy')
-            if os.path.exists(dname):
-                mp_util.mkdir_p(dname)
-                graphdef.filename = os.path.join(dname, 'mavgraphs.xml')
-        else:
-            graphdef.filename = 'mavgraphs.xml'
-    if graphdef.filename is None:
-        print("No file to save graph to")
-        return
+        graphdef.filename = os.path.join(mp_util.dot_mavproxy(), 'mavgraphs.xml')
     contents = None
     try:
         contents = open(graphdef.filename).read()
         graphs = load_graph_xml(contents, graphdef.filename, load_all=True)
     except Exception as ex:
         graphs = []
+        print(ex)
     if contents is not None and len(graphs) == 0:
         print("Unable to parse %s" % graphdef.filename)
         return
@@ -436,6 +443,7 @@ def save_graph(graphdef):
             g.description = ''
         f.write("  <description>%s</description>\n" % g.description.strip())
         for e in g.expressions:
+            e = xml_escape(e)
             f.write("  <expression>%s</expression>\n" % e.strip())
         f.write(" </graph>\n\n")
     f.write("</graphs>\n")
@@ -582,6 +590,7 @@ subsystems = {
     26 : "FAILSAFE_SENSORS",
     27 : "FAILSAFE_LEAK",
     28 : "PILOT_INPUT",
+    29 : "FAILSAFE_VIBE",
 }
 
 error_codes = { # not used yet
@@ -643,7 +652,8 @@ def cmd_messages(args):
         else:
             mstr = m.text
         if fnmatch.fnmatch(mstr.upper(), wildcard.upper()):
-            tstr = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(m._timestamp))
+            ts_ms = int(m._timestamp * 1000.0) % 1000
+            tstr = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(m._timestamp)) + ".%.03u" % ts_ms
             print("%s %s" % (tstr, mstr))
     mestate.mlog.rewind()
 
@@ -699,9 +709,11 @@ def cmd_devid(args):
     params = mestate.mlog.params
     k = sorted(params.keys())
     for p in k:
-        if p.startswith('COMPASS_DEV_ID'):
+        if p.startswith('COMPASS_DEV_ID') or p.startswith('COMPASS_PRIO'):
             mp_util.decode_devid(params[p], p)
         if p.startswith('INS_') and p.endswith('_ID'):
+            mp_util.decode_devid(params[p], p)
+        if p.startswith('GND_BARO') and p.endswith('_ID'):
             mp_util.decode_devid(params[p], p)
 
 def cmd_loadfile(args):
@@ -864,7 +876,7 @@ if __name__ == "__main__":
         try:
             version = pkg_resources.require("mavproxy")[0].version
         except Exception as e:
-            start_script = os.path.join(os.environ['LOCALAPPDATA'], "MAVProxy", "version.txt")
+            start_script = mp_util.dot_mavproxy("version.txt")
             f = open(start_script, 'r')
             version = f.readline()
         print("MAVExplorer Version: " + version)
@@ -888,7 +900,7 @@ if __name__ == "__main__":
     while mestate.rl is not None and not mestate.exit:
         try:
             try:
-                line = input(mestate.rl.prompt)
+                line = mestate.rl.input()
             except EOFError:
                 mestate.exit = True
                 break

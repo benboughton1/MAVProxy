@@ -180,9 +180,7 @@ class ParamEditorFrame(wx.Frame):
             os.dup2(err.fileno(), sys.stderr.fileno())
 
     def OnCloseWindow(self, event):
-        self.event_queue_lock.acquire()
         self.event_queue.put(ParamEditorEvent(ph_event.PEE_TIME_TO_QUIT))
-        self.event_queue_lock.release()
         event.Skip()
 
     def onSelect(self, event):
@@ -249,16 +247,13 @@ class ParamEditorFrame(wx.Frame):
 
     def time_to_process_gui_events(self, evt):
         event_processed = False
-        self.gui_event_queue_lock.acquire()
-        while self.gui_event_queue.qsize() > 0:
+        while not self.gui_event_queue.empty():
             event_processed = True
             try:
                 event = self.gui_event_queue.get(block=False)
                 self.process_gui_event(event)
             except Exception as e:
                 pass
-
-        self.gui_event_queue_lock.release()
 
         if self.requires_redraw and ((time.time() - self.last_grid_update) > 0.1):
             self.key_redraw()
@@ -410,15 +405,12 @@ class ParamEditorFrame(wx.Frame):
 
     def Read_File(self, event):  # wxGlade: ParamEditor.<event_handler>
         fd = wx.FileDialog(self, "Open Parameter File", os.getcwd(), "",
-                           "*.parm|*", wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
+                           "ParmFiles(*.parm,*.param)|*.parm;*.param", wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
         if (fd.ShowModal() == wx.ID_CANCEL):
             return  # user changed their mind...
 
-        self.event_queue_lock.acquire()
         self.event_queue.put(ParamEditorEvent(ph_event.PEE_LOAD_FILE,
                                               path=fd.GetPath()))
-        self.event_queue_lock.release()
-
         self.last_param_file_path = fd.GetPath()
 
         event.Skip()
@@ -426,28 +418,22 @@ class ParamEditorFrame(wx.Frame):
     def Write_File(self, event):  # wxGlade: ParamEditor.<event_handler>
         fd = wx.FileDialog(self, "Save Parameter File", os.getcwd(),
                            os.path.basename(self.last_param_file_path),
-                           "*.parm|*", wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+                           "ParmFiles(*.parm,*.param)|*.parm;*.param", wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
         if (fd.ShowModal() == wx.ID_CANCEL):
             return  # user change their mind...
 
-        self.event_queue_lock.acquire()
         self.event_queue.put(ParamEditorEvent(ph_event.PEE_SAVE_FILE,
                                               path=fd.GetPath()))
-        self.event_queue_lock.release()
 
         self.last_param_file_path = fd.GetPath()
 
         event.Skip()
 
     def format_params(self):
-        self.event_queue_lock.acquire()
         self.event_queue.put(ParamEditorEvent(ph_event.PEE_RESET))
-        self.event_queue_lock.release()
 
     def fetch_param(self, event):
-        self.event_queue_lock.acquire()
         self.event_queue.put(ParamEditorEvent(ph_event.PEE_FETCH))
-        self.event_queue_lock.release()
 
     def reset_param(self, event):  # wxGlade: ParamEditor.<event_handler>
         dlg = wx.MessageDialog(self, "Are you sure you want to reset all parameters to default values?", "Reset to default", wx.YES_NO | wx.ICON_QUESTION)
@@ -468,17 +454,13 @@ class ParamEditorFrame(wx.Frame):
         self.param_help_tree()
 
     def read_param(self, event):  # wxGlade: ParamEditor.<event_handler>
-        self.event_queue_lock.acquire()
         self.event_queue.put(ParamEditorEvent(ph_event.PEE_READ_PARAM))
-        self.event_queue_lock.release()
         event.Skip()
 
     def write_param(self, event):  # wxGlade: ParamEditor.<event_handler>
         param = [param for param, value in self.modified_param.items()]
-        self.event_queue_lock.acquire()
         self.event_queue.put(ParamEditorEvent(ph_event.PEE_WRITE_PARAM,
                                               modparam=self.modified_param))
-        self.event_queue_lock.release()
         for row in range(self.display_list.GetNumberRows()):
             if self.display_list.GetCellValue(row, PE_PARAM) in param:
                 self.display_list.SetCellBackgroundColour(row, PE_VALUE,
@@ -494,7 +476,6 @@ class ParamEditorFrame(wx.Frame):
         event.Skip()
 
     def category_change(self, event):
-        self.gui_event_queue_lock.acquire()
         key = self.search_choices[self.search_list.GetSelection()]
         key = key.split(':')[1]
         self.categorical_list = {}
@@ -510,18 +491,16 @@ class ParamEditorFrame(wx.Frame):
                         self.categorical_list[param] = value
                 except Exception:
                     pass
-        self.gui_event_queue_lock.release()
         self.key_redraw()
         event.Skip()
 
     def key_redraw(self):
-        self.gui_event_queue_lock.acquire()
         key = self.search_key.GetValue()
         if self.search_list.GetString(self.search_list.GetSelection()) == 'All':
             self.categorical_list = self.param_received
         temp = {}
         for param, value in self.categorical_list.items():
-            if key.lower() in param.lower():
+            if isinstance(param,str) and key.lower() in param.lower():
                 temp[param] = value
             else:
                 try:
@@ -529,8 +508,10 @@ class ParamEditorFrame(wx.Frame):
                         temp[param] = value
                 except Exception as e:
                     continue
+        for param, value in self.param_received.items():
+            if param in temp:
+                temp[param] = value
         self.redraw_grid(temp)
-        self.gui_event_queue_lock.release()
 
     def ParamChanged(self, event):  # wxGlade: ParamEditor.<event_handler>
         row_changed = event.GetRow()

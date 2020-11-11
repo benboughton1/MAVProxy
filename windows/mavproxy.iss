@@ -6,7 +6,7 @@
 ; Note MyAppVersion is defined in MAVProxyWinBuild.bat
 ; #define MyAppVersion {code:GetVersion}
 #define MyAppPublisher "Andrew Tridgell"
-#define MyAppURL "http://ardupilot.github.io/MAVProxy"
+#define MyAppURL "https://ardupilot.org/mavproxy/index.html"
 #define MyAppExeName "mavproxy.exe"
 
 [Setup]
@@ -44,8 +44,9 @@ Source: "..\MAVProxy\dist\mavproxy\*"; DestDir: "{app}"; Flags: ignoreversion re
 Source: "..\MAVProxy\dist\MAVExplorer\MAVExplorer.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\MAVProxy\dist\MAVExplorer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
-Source: "..\windows\mavinit.scr"; DestDir: "{localappdata}\MAVProxy"; Flags: ignoreversion
-Source: "..\windows\version.txt"; DestDir: "{localappdata}\MAVProxy"; Flags: ignoreversion
+Source: "..\Parameters\*"; DestDir: "{localappdata}\.mavproxy"; Flags: ignoreversion
+Source: "..\windows\mavinit.scr"; DestDir: "{localappdata}\.mavproxy"; Flags: ignoreversion
+Source: "..\windows\version.txt"; DestDir: "{localappdata}\.mavproxy"; Flags: ignoreversion
 Source: "..\windows\Startup Examples\MAVProxyLogput.bat"; DestDir: "{app}\Examples"; Flags: ignoreversion
 Source: "..\windows\Startup Examples\MAVProxyMultiOutput.bat"; DestDir: "{app}\Examples"; Flags: ignoreversion
 
@@ -53,7 +54,7 @@ Source: "..\windows\Startup Examples\MAVProxyMultiOutput.bat"; DestDir: "{app}\E
 Name: "{group}\{#MyAppName} (No GUI)"; Filename: "{app}\{#MyAppExeName}"
 Name: "{group}\MAVExplorer"; Filename: "{app}\MAVExplorer.exe"
 Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
-Name: "{group}\Documentation"; Filename: "http://ardupilot.github.io/MAVProxy/"
+Name: "{group}\Documentation"; Filename: "https://ardupilot.org/mavproxy/index.html"
 Name: "{group}\Startup Examples"; Filename: "{app}\Examples"
 Name: "{group}\Ardupilot MAVProxy Forum"; Filename: "http://discuss.ardupilot.org/c/ground-control-software/mavproxy"
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Parameters: "--map --console --load-module=graph"

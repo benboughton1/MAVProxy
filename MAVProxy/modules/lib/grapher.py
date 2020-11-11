@@ -5,9 +5,12 @@
 '''
 
 import ast
-import sys, struct, time, os, datetime
+import sys, struct, time, os, datetime, platform
 import math, re
 import matplotlib
+if platform.system() != "Darwin":
+    # on MacOS we can't set WxAgg here as it conflicts with the MacOS version
+    matplotlib.use('WXAgg')
 from math import *
 from pymavlink.mavextra import *
 import pylab
@@ -157,6 +160,10 @@ class MavGraph(object):
             # convert back to data coords with respect to ax
             ax_coord = inv.transform(display_coord)
             xstr = self.formatter(x)
+            # add in hundredths of seconds, converting from days
+            sec = x * 60 * 60 * 24
+            hsec = int((sec - int(sec))*100)
+            xstr += ".%02u" % hsec
             y2 = ax_coord[1]
             if self.xaxis:
                 return ('x=%.3f Left=%.3f Right=%.3f' % (x, y2, y))
@@ -235,7 +242,7 @@ class MavGraph(object):
         ax1_labels = []
         ax2_labels = []
 
-        for i in range(0, len(fields)):
+        for i in range(len(fields)):
             if len(x[i]) == 0:
                 #print("Failed to find any values for field %s" % fields[i])
                 continue
@@ -257,8 +264,12 @@ class MavGraph(object):
                 if label.endswith(":2"):
                     label = label[:-2]
                 ax2_labels.append(label)
+                if self.custom_labels[i] is not None:
+                    ax2_labels[-1] = self.custom_labels[i]
             else:
                 ax1_labels.append(fields[i])
+                if self.custom_labels[i] is not None:
+                    ax1_labels[-1] = self.custom_labels[i]
                 ax = self.ax1
 
             if self.xaxis:
@@ -336,6 +347,9 @@ class MavGraph(object):
 
         if title is not None:
             pylab.title(title)
+            self.fig.canvas.set_window_title(title)
+        else:
+            self.fig.canvas.set_window_title(fields[0])
 
         if self.show_flightmode:
             mode_patches = []
@@ -387,9 +401,18 @@ class MavGraph(object):
             if s:
                 all_false = False
 
-        # pre-calc right/left axes
         self.num_fields = len(self.fields)
-        for i in range(0, self.num_fields):
+
+        self.custom_labels = [None] * self.num_fields
+        for i in range(self.num_fields):
+            if self.fields[i].endswith(">"):
+                a2 = self.fields[i].rfind("<")
+                if a2 != -1:
+                    self.custom_labels[i] = self.fields[i][a2+1:-1]
+                    self.fields[i] = self.fields[i][:a2]
+
+        # pre-calc right/left axes
+        for i in range(self.num_fields):
             f = self.fields[i]
             if f.endswith(":2"):
                 self.axes[i] = 2
@@ -418,24 +441,28 @@ class MavGraph(object):
         except Exception:
             pass
 
+        all_messages = {}
+
         while True:
             msg = mlog.recv_match(type=self.msg_types)
             if msg is None:
                 break
-            if msg.get_type() not in self.msg_types:
+            mtype = msg.get_type()
+            all_messages[mtype] = msg
+            if mtype not in self.msg_types:
                 continue
             if self.condition:
-                if not mavutil.evaluate_condition(self.condition, mlog.messages):
+                if not mavutil.evaluate_condition(self.condition, all_messages):
                     continue
             tdays = timestamp_to_days(msg._timestamp, self.timeshift)
 
             if all_false or len(flightmode_selections) == 0:
-                self.add_data(tdays, msg, mlog.messages)
+                self.add_data(tdays, msg, all_messages)
             else:
                 if idx < len(self.flightmode_list) and msg._timestamp >= self.flightmode_list[idx][2]:
                     idx += 1
                 elif (idx < len(flightmode_selections) and flightmode_selections[idx]):
-                    self.add_data(tdays, msg, mlog.messages)
+                    self.add_data(tdays, msg, all_messages)
 
     def xlim_change_check(self, idx):
         '''handle xlim change requests from queue'''

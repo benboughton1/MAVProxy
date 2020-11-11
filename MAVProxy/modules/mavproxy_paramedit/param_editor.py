@@ -5,6 +5,7 @@ Akshath Singhal
 June 2019
 '''
 
+import platform
 from MAVProxy.modules.lib import mp_util
 from MAVProxy.modules.lib import multiproc
 from MAVProxy.modules.mavproxy_paramedit import ph_event
@@ -35,17 +36,15 @@ class ParamEditorEventThread(threading.Thread):
 
     def run(self):
         while not self.time_to_quit:
-            while (self.event_queue.qsize() > 0):
+            while not self.event_queue.empty():
                 try:
                     event = self.event_queue.get(block=False)
                     event_type = event.get_type()
 
                     if event_type == ph_event.PEE_READ_PARAM:
                         self.param_received = self.module('param').mav_param
-                        self.mp_paramedit.gui_event_queue_lock.acquire()
                         self.mp_paramedit.gui_event_queue.put(ParamEditorEvent(
                             ph_event.PEGE_READ_PARAM, param=self.param_received, vehicle=self.mp_paramedit.mpstate.vehicle_name))
-                        self.mp_paramedit.gui_event_queue_lock.release()
 
                     elif event_type == ph_event.PEE_TIME_TO_QUIT:
                         self.mp_paramedit.needs_unloading = True
@@ -54,10 +53,8 @@ class ParamEditorEventThread(threading.Thread):
                         self.module('param').mav_param.load(
                                 event.get_arg("path"))
                         self.param_received = self.module('param').mav_param
-                        self.mp_paramedit.gui_event_queue_lock.acquire()
                         self.mp_paramedit.gui_event_queue.put(ParamEditorEvent(
                             ph_event.PEGE_READ_PARAM, param=self.param_received))
-                        self.mp_paramedit.gui_event_queue_lock.release()
 
                     elif event_type == ph_event.PEE_SAVE_FILE:
                         self.module('param').mav_param.save(
@@ -96,11 +93,19 @@ class ParamEditorMain(object):
         self.mpstate.param_editor = self
         self.needs_unloading = False
 
-        self.child = multiproc.Process(
-                        target=self.child_task,
-                        args=(self.event_queue,
-                              self.event_queue_lock, self.gui_event_queue,
-                              self.gui_event_queue_lock, self.close_window))
+        if platform.system() == 'Windows':
+            self.child = threading.Thread(
+                            target=self.child_task,
+                            args=(self.event_queue,
+                                  self.event_queue_lock, self.gui_event_queue,
+                                  self.gui_event_queue_lock, self.close_window))
+        else:
+            self.child = multiproc.Process(
+                                target=self.child_task,
+                                args=(self.event_queue,
+                                      self.event_queue_lock, self.gui_event_queue,
+                                      self.gui_event_queue_lock, self.close_window))
+
         self.child.start()
 
         self.event_thread = ParamEditorEventThread(
@@ -205,7 +210,10 @@ class ParamEditorMain(object):
         '''close the Parameter Editor window'''
         self.time_to_quit = True
         self.close_window.release()
-        self.child.terminate()
+        if platform.system() == 'Windows':
+            self.child.join()
+        else:
+            self.child.terminate()
 
     def set_params(self):
         for param, value in self.paramchanged.items():

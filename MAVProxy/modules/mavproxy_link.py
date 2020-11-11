@@ -36,19 +36,21 @@ preferred_ports = [
 class LinkModule(mp_module.MPModule):
 
     def __init__(self, mpstate):
-        super(LinkModule, self).__init__(mpstate, "link", "link control", public=True)
+        super(LinkModule, self).__init__(mpstate, "link", "link control", public=True, multi_vehicle=True)
         self.add_command('link', self.cmd_link, "link control",
                          ["<list|ports>",
                           'add (SERIALPORT)',
                           'attributes (LINK) (ATTRIBUTES)',
                           'remove (LINKS)'])
         self.add_command('vehicle', self.cmd_vehicle, "vehicle control")
+        self.add_command('alllinks', self.cmd_alllinks, "send command on all links")
         self.no_fwd_types = set()
         self.no_fwd_types.add("BAD_DATA")
         self.add_completion_function('(SERIALPORT)', self.complete_serial_ports)
         self.add_completion_function('(LINKS)', self.complete_links)
         self.add_completion_function('(LINK)', self.complete_links)
         self.last_altitude_announce = 0.0
+        self.vehicle_list = set()
 
         self.menu_added_console = False
         if mp_util.has_wxpython:
@@ -131,7 +133,7 @@ class LinkModule(mp_module.MPModule):
     def show_link(self):
         '''show link information'''
         for master in self.mpstate.mav_master:
-            linkdelay = (self.status.highest_msec - master.highest_msec)*1.0e-3
+            linkdelay = (self.status.highest_msec.get(self.target_system,0) - master.highest_msec.get(self.target_system,0))*1.0e-3
             if master.linkerror:
                 status = "DOWN"
             else:
@@ -158,6 +160,15 @@ class LinkModule(mp_module.MPModule):
                                                                                     self.status.bytecounters['MasterIn'][master.linknum].rate(),
                                                                                     sign_string))
 
+    def cmd_alllinks(self, args):
+        '''send command on all links'''
+        saved_target = self.mpstate.settings.target_system
+        print("Sending to: ", self.vehicle_list)
+        for v in sorted(self.vehicle_list):
+            self.cmd_vehicle([str(v)])
+            self.mpstate.functions.process_stdin(' '.join(args), True)
+        self.cmd_vehicle([str(saved_target)])
+        
     def cmd_link_list(self):
         '''list links'''
         print("%u links" % len(self.mpstate.mav_master))
@@ -223,7 +234,7 @@ class LinkModule(mp_module.MPModule):
         conn.link_delayed = False
         conn.last_heartbeat = 0
         conn.last_message = 0
-        conn.highest_msec = 0
+        conn.highest_msec = {}
         conn.target_system = self.settings.target_system
         self.apply_link_attributes(conn, optional_attributes)
         self.mpstate.mav_master.append(conn)
@@ -327,20 +338,21 @@ class LinkModule(mp_module.MPModule):
             return
 
         msec = m.time_boot_ms
-        if msec + 30000 < master.highest_msec:
+        sysid = m.get_srcSystem()
+        if msec + 30000 < master.highest_msec.get(sysid,0):
             self.say('Time has wrapped')
-            print('Time has wrapped', msec, master.highest_msec)
-            self.status.highest_msec = msec
+            print('Time has wrapped', msec, master.highest_msec.get(sysid,0))
+            self.status.highest_msec[sysid] = msec
             for mm in self.mpstate.mav_master:
                 mm.link_delayed = False
-                mm.highest_msec = msec
+                mm.highest_msec[sysid] = msec
             return
 
         # we want to detect when a link is delayed
-        master.highest_msec = msec
-        if msec > self.status.highest_msec:
-            self.status.highest_msec = msec
-        if msec < self.status.highest_msec and len(self.mpstate.mav_master) > 1 and self.mpstate.settings.checkdelay:
+        master.highest_msec[sysid] = msec
+        if msec > self.status.highest_msec.get(sysid,0):
+            self.status.highest_msec[sysid] = msec
+        if msec < self.status.highest_msec.get(sysid,0) and len(self.mpstate.mav_master) > 1 and self.mpstate.settings.checkdelay:
             master.link_delayed = True
         else:
             master.link_delayed = False
@@ -630,7 +642,14 @@ class LinkModule(mp_module.MPModule):
                     self.mpstate.console.writeln('< '+ str(m))
                     break
 
+    def mavlink_packet(self, msg):
+        '''handle an incoming mavlink packet'''
+        type = msg.get_type()
 
+        if type == 'HEARTBEAT':
+            sysid = msg.get_srcSystem()
+            if not sysid in self.vehicle_list and msg.type != mavutil.mavlink.MAV_TYPE_GCS:
+                self.vehicle_list.add(sysid)
 
     def master_callback(self, m, master):
         '''process mavlink message m on master, sending any messages to recipients'''
@@ -671,10 +690,20 @@ class LinkModule(mp_module.MPModule):
 
         # keep the last message of each type around
         self.status.msgs[mtype] = m
+        instance_field = getattr(m, '_instance_field', None)
         if mtype not in self.status.msg_count:
             self.status.msg_count[mtype] = 0
         self.status.msg_count[mtype] += 1
 
+        if instance_field is not None:
+            instance_value = getattr(m, instance_field, None)
+            if instance_value is not None:
+                mtype_instance = "%s[%s]" % (mtype, instance_value)
+                self.status.msgs[mtype_instance] = m
+                if mtype_instance not in self.status.msg_count:
+                    self.status.msg_count[mtype_instance] = 0
+                self.status.msg_count[mtype_instance] += 1
+        
         if m.get_srcComponent() == mavutil.mavlink.MAV_COMP_ID_GIMBAL and mtype == 'HEARTBEAT':
             # silence gimbal heartbeat packets for now
             return
@@ -751,6 +780,7 @@ class LinkModule(mp_module.MPModule):
                 if stamp > best_timestamp:
                     best_link = i
                     best_timestamp = stamp
+            m.link_delayed = False                    
         self.mpstate.settings.link = best_link + 1
         print("Set vehicle %s (link %u)" % (args[0], best_link+1))
 

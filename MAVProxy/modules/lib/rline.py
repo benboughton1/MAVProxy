@@ -3,19 +3,39 @@ readline handling for mavproxy
 '''
 
 import sys, glob, os, platform
+from future.builtins import input
 import re
 from pymavlink import mavutil
 
+# some python distributions don't have readline, so handle that case
+# with a try/except
+if platform.system() == 'Darwin':
+    import gnureadline as readline
+elif platform.system() == 'Windows' and sys.version_info >= (3, 0):
+    # Python 3.8 defaults to Proactor event loop, which doesn't work well
+    if sys.version_info >= (3, 8):
+        import asyncio
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    from prompt_toolkit import prompt, PromptSession
+    from prompt_toolkit.completion import Completer, Completion
+    from prompt_toolkit.shortcuts import CompleteStyle
+    from prompt_toolkit.patch_stdout import patch_stdout
+else:
+    try:
+        import readline
+    except ImportError:
+        import pyreadline as readline
+    
 rline_mpstate = None
-redisplay = None
+#redisplay = None
 
 class rline(object):
     '''async readline abstraction'''
     def __init__(self, prompt, mpstate):
-        import threading
         global rline_mpstate
         self.prompt = prompt
         rline_mpstate = mpstate
+        
         # other modules can add their own completion functions
         mpstate.completion_functions = {
             '(FILENAME)' : complete_filename,
@@ -28,15 +48,25 @@ class rline(object):
             '(LOADEDMODULES)' : complete_loadedmodules
             }
 
+        if platform.system() == 'Windows' and sys.version_info >= (3, 0):
+            # Create key bindings registry with a custom binding for the Tab key that
+            # displays completions like GNU readline.
+            self.session = PromptSession()
+            mpstate.completor = MAVPromptCompleter()
+
     def set_prompt(self, prompt):
         if prompt != self.prompt:
             self.prompt = prompt
-            sys.stdout.write(prompt)
-            self.redisplay()
+            if platform.system() != 'Windows' or sys.version_info < (3, 0):
+                sys.stdout.write(prompt)
+                self.redisplay()
 
     def add_history(self, line):
         '''add a line to the history'''
-        readline.add_history(line)
+        if platform.system() == 'Windows' and sys.version_info >= (3, 0):
+            self.session.history.append_string(line)
+        else:
+            readline.add_history(line)
         self.redisplay()
 
     def redisplay(self):
@@ -45,8 +75,62 @@ class rline(object):
             redisplay()
         except Exception as ex:
             pass
+            
+    def get_prompt(self):
+        '''return the current prompt'''
+        return self.prompt
+            
+    def input(self):
+        ''' get user input'''
+        ret = ""
+        if platform.system() == 'Windows' and sys.version_info >= (3, 0):
+            global rline_mpstate
+            with patch_stdout():
+                return self.session.prompt(self.get_prompt,completer=rline_mpstate.completor, complete_while_typing=False, complete_style=CompleteStyle.READLINE_LIKE, refresh_interval=0.5)
+        else:
+            return input(self.get_prompt())
 
+if platform.system() == 'Windows' and sys.version_info >= (3, 0):
+    # This is the prompt-toolkit setup for Windows
+    class MAVPromptCompleter(Completer):
+        '''Completion generator for commands'''
+        def __init__(self, ):
+            #global rline_mpstate
+            #self.mpstate = rline_mpstate
+            self.last_clist = None
+            # other modules can add their own completion functions
 
+        def get_completions(self, document, complete_event):
+            '''yield all the possible completion strings'''
+            global rline_mpstate
+            text = document.text_before_cursor
+            #cmd = text.split(' ')
+            
+            cmd = re.split(" +", text)
+            final_completor = cmd[-1]
+
+            if len(cmd) != 0 and cmd[0] in rline_mpstate.completions:
+                # we have a completion rule for this command
+                self.last_clist = complete_rules(rline_mpstate.completions[cmd[0]], cmd[1:])
+            elif len(cmd) == 0 or len(cmd) == 1:
+                # if on first part then complete on commands and aliases
+                self.last_clist = complete_command(text) + complete_alias(text)
+            else:
+                # assume completion by filename
+                self.last_clist = glob.glob(text+'*')
+            ret = []
+            for c in self.last_clist:
+                if c.startswith(final_completor) or c.startswith(final_completor.upper()):
+                    ret.append(c)
+            if len(ret) == 0:
+                # if we had no matches then try case insensitively
+                final_completor = final_completor.lower()
+                for c in self.last_clist:
+                    if c.lower().startswith(final_completor):
+                        ret.append(c)
+
+            for c in ret:
+                yield Completion(c, start_position=-len(final_completor))
 
 def complete_alias(text):
     '''return list of aliases'''
@@ -89,10 +173,12 @@ def complete_filename(text):
 
 def complete_parameter(text):
     '''complete a parameter'''
+    global rline_mpstate
     return list(rline_mpstate.mav_param.keys())
 
 def complete_variable(text):
     '''complete a MAVLink variable or expression'''
+    global rline_mpstate
     if text == '':
         return list(rline_mpstate.status.msgs.keys())
 
@@ -102,11 +188,12 @@ def complete_variable(text):
     else:
         suffix = ''
 
-    m1 = re.match("^(.*?)([A-Z0-9][A-Z0-9_]*)[.]([A-Za-z0-9_]*)$", text)
+    m1 = re.match("^(.*?)([A-Z0-9][A-Z0-9_]*(\[[0-9]\])?)[.]([A-Za-z0-9_]*)$", text)
     if m1 is not None:
         prefix = m1.group(1)
         mtype = m1.group(2)
-        fname = m1.group(3)
+        instance = m1.group(3)
+        fname = m1.group(4)
         if mtype in rline_mpstate.status.msgs:
             ret = []
             for f in rline_mpstate.status.msgs[mtype].get_fieldnames():
@@ -114,7 +201,7 @@ def complete_variable(text):
                     ret.append(prefix + mtype + '.' + f + suffix)
             return ret
         return []
-    m2 = re.match("^(.*?)([A-Z0-9][A-Z0-9_]*)$", text)
+    m2 = re.match("^(.*?)([A-Z0-9][A-Z0-9_]*(\[[0-9]\])?)$", text)
     prefix = m2.group(1)
     mtype = m2.group(2)
     ret = []
@@ -154,7 +241,7 @@ def complete_rule(rule, cmd):
     '''complete using one rule'''
     global rline_mpstate
     rule_components = rule.split(' ')
-
+    
     #  complete the empty string (e.g "graph <TAB><TAB>")
     if len(cmd) == 0:
         return rule_expand(rule_components[0], "")
@@ -165,7 +252,12 @@ def complete_rule(rule, cmd):
             return []
 
     # expand the next rule component
-    expanded = rule_expand(rule_components[len(cmd)-1], cmd[-1])
+    expanded = []
+    if platform.system() == 'Windows' and sys.version_info >= (3, 0):
+        if len(rule_components) >= len(cmd):
+            expanded = rule_expand(rule_components[len(cmd)-1], cmd[-1])
+    else:
+        expanded = rule_expand(rule_components[len(cmd)-1], cmd[-1])
     return expanded
 
 
@@ -214,25 +306,12 @@ def complete(text, state):
     last_clist = ret
     return last_clist[state]
 
-
-
-# some python distributions don't have readline, so handle that case
-# with a try/except
-try:
-    if platform.system() == 'Darwin':
-        import gnureadline as readline
-    else:
-        try:
-            import readline
-        except ImportError:
-            import pyreadline as readline
+# Configure readline for linux/mac systems
+if platform.system() != 'Windows' or sys.version_info < (3, 0):
     readline.set_completer_delims(' \t\n;')
     readline.parse_and_bind("tab: complete")
     readline.set_completer(complete)
-    redisplay = readline.redisplay
-except Exception:
-    pass
-
+    #redisplay = readline.redisplay
 
 if __name__ == "__main__":
     from mp_settings import MPSettings, MPSetting

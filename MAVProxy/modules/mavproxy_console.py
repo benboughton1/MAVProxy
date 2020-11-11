@@ -35,6 +35,7 @@ class ConsoleModule(mp_module.MPModule):
         self.last_sys_status_health = 0
         self.last_sys_status_errors_announce = 0
         self.user_added = {}
+        self.safety_on = False
         self.add_command('console', self.cmd_console, "console module", ['add','list','remove'])
         mpstate.console = wxconsole.MessageConsole(title='Console')
 
@@ -235,6 +236,17 @@ class ConsoleModule(mp_module.MPModule):
         self.vehicle_name_by_sysid[sysid] = self.vehicle_type_string(hb)
         self.update_vehicle_menu()
 
+    def check_critical_error(self, msg):
+        '''check for any error bits being set in SYS_STATUS'''
+        errors = msg.errors_count1 | (msg.errors_count2<<16)
+        if errors == 0:
+            return
+        now = time.time()
+        if now - self.last_sys_status_errors_announce > self.mpstate.settings.sys_status_error_warn_interval:
+            self.last_sys_status_errors_announce = now
+            self.say("Critical failure 0x%x sysid=%u" % (errors, msg.get_srcSystem()))
+
+        
     def mavlink_packet(self, msg):
         '''handle an incoming mavlink packet'''
         if not isinstance(self.console, wxconsole.MessageConsole):
@@ -243,9 +255,9 @@ class ConsoleModule(mp_module.MPModule):
             self.mpstate.console = textconsole.SimpleConsole()
             return
         type = msg.get_type()
+        sysid = msg.get_srcSystem()
 
         if type == 'HEARTBEAT':
-            sysid = msg.get_srcSystem()
             if not sysid in self.vehicle_list:
                 self.add_new_vehicle(msg)
             if sysid not in self.component_name:
@@ -267,7 +279,10 @@ class ConsoleModule(mp_module.MPModule):
             else:
                 fg = 'black'
             self.console.set_status('Radio', 'Radio %u/%u %u/%u' % (msg.rssi, msg.noise, msg.remrssi, msg.remnoise), fg=fg)
-            
+
+        if type == 'SYS_STATUS':
+            self.check_critical_error(msg)
+
         if not self.is_primary_vehicle(msg):
             # don't process msgs from other than primary vehicle, other than
             # updating vehicle list
@@ -288,9 +303,9 @@ class ConsoleModule(mp_module.MPModule):
                 self.console.set_status(field, '%s OK%s (%u)' % (prefix, fix_type, nsats), fg='green')
             else:
                 self.console.set_status(field, '%s %u (%u)' % (prefix, fix_type, nsats), fg='red')
-            gps_heading = int(self.mpstate.status.msgs['GPS_RAW_INT'].cog * 0.01)
             if type == 'GPS_RAW_INT':
                 vfr_hud_heading = master.field('VFR_HUD', 'heading', None)
+                gps_heading = int(msg.cog * 0.01)
                 if vfr_hud_heading is None:
                     vfr_hud_heading = '---'
                 else:
@@ -395,20 +410,10 @@ class ConsoleModule(mp_module.MPModule):
                     self.say("%s fail" % s)
             self.last_sys_status_health = msg.onboard_control_sensors_health
 
-            # check for any error bits being set:
-            now = time.time()
-            if now - self.last_sys_status_errors_announce > self.mpstate.settings.sys_status_error_warn_interval:
-                for field_num in range(1, 5):
-                    field = "errors_count%u" % field_num
-                    x = getattr(msg, field, None)
-                    if x is None:
-                        self.console.writeln("Failed to get field %s" % field)
-                        self.last_sys_status_errors_announce = now
-                        break
-                    if x != 0:
-                        self.last_sys_status_errors_announce = now
-                        self.say("Critical failure")
-                        break
+            if ((msg.onboard_control_sensors_enabled & mavutil.mavlink.MAV_SYS_STATUS_SENSOR_MOTOR_OUTPUTS) == 0):
+                self.safety_on = True
+            else:
+                self.safety_on = False                
 
         elif type == 'WIND':
             self.console.set_status('Wind', 'Wind %u/%s' % (msg.direction, self.speed_string(msg.speed)))
@@ -461,16 +466,15 @@ class ConsoleModule(mp_module.MPModule):
                 fmode = self.settings.vehicle_name + ':' + fmode
             self.console.set_status('Mode', '%s' % fmode, fg='blue')
             if len(self.vehicle_list) > 1:
-                self.console.set_status('SysID', 'Sys:%u' % msg.get_srcSystem(), fg='blue')
+                self.console.set_status('SysID', 'Sys:%u' % sysid, fg='blue')
             if self.master.motors_armed():
                 arm_colour = 'green'
             else:
                 arm_colour = 'red'
             armstring = 'ARM'
             # add safety switch state
-            if 'SYS_STATUS' in self.mpstate.status.msgs:
-                if (self.mpstate.status.msgs['SYS_STATUS'].onboard_control_sensors_enabled & mavutil.mavlink.MAV_SYS_STATUS_SENSOR_MOTOR_OUTPUTS) == 0:
-                    armstring += '(SAFE)'
+            if self.safety_on:
+                armstring += '(SAFE)'
             self.console.set_status('ARM', armstring, fg=arm_colour)
             if self.max_link_num != len(self.mpstate.mav_master):
                 for i in range(self.max_link_num):
@@ -478,7 +482,7 @@ class ConsoleModule(mp_module.MPModule):
                 self.max_link_num = len(self.mpstate.mav_master)
             for m in self.mpstate.mav_master:
                 if self.mpstate.settings.checkdelay:
-                    linkdelay = (self.mpstate.status.highest_msec - m.highest_msec)*1.0e-3
+                    linkdelay = (self.mpstate.status.highest_msec.get(sysid, 0) - m.highest_msec.get(sysid,0))*1.0e-3
                 else:
                     linkdelay = 0
                 linkline = "Link %s " % (self.link_label(m))

@@ -1,7 +1,7 @@
 """
     MAVProxy help/versioning module
 """
-import os, time, platform, re, sys
+import os, time, platform, re, sys, socket
 from pymavlink import mavwp, mavutil
 from MAVProxy.modules.lib import mp_util
 from MAVProxy.modules.lib import mp_module
@@ -34,7 +34,7 @@ class HelpModule(mp_module.MPModule):
             import pkg_resources
             self.version = pkg_resources.Environment()["mavproxy"][0].version
         except:
-            start_script = os.path.join(os.environ['LOCALAPPDATA'], "MAVProxy", "version.txt")
+            start_script = mp_util.dot_mavproxy("version.txt")
             f = open(start_script, 'r')
             self.version = f.readline()
         self.host = platform.system() + platform.release()
@@ -45,14 +45,18 @@ class HelpModule(mp_module.MPModule):
             self.wxVersion = ''
 
         #check for updates, if able
-        import pip
         pypi = xmlrpclib.ServerProxy('https://pypi.python.org/pypi')
-        available = pypi.package_releases('MAVProxy')
-        if not available:
-            self.newversion = 'Error finding update'
-        else:
+        available = None
+        try:
+            available = pypi.package_releases('MAVProxy')
+        except socket.gaierror:
+            pass
+            
+        if available:
             self.newversion = available[0]
-
+        else:
+            self.newversion = 'Error finding update'
+            
         #and format the update string
         if not isinstance(self.newversion, basestring):
             self.newversion = "Error finding update"
@@ -66,7 +70,7 @@ class HelpModule(mp_module.MPModule):
         if mp_util.has_wxpython:
             self.menu_added_console = False
             self.menu = MPMenuSubMenu('Help',
-                                  items=[MPMenuItem('MAVProxy website', 'MAVProxy website', '', handler=MPMenuOpenWeblink('http://ardupilot.github.io/MAVProxy/')),
+                                  items=[MPMenuItem('MAVProxy website', 'MAVProxy website', '', handler=MPMenuOpenWeblink('https://ardupilot.org/mavproxy/index.html')),
                                          MPMenuItem('Check for Updates', 'Check for Updates', '', handler=MPMenuChildMessageDialog(title="Updates", message=self.newversion)),
                                          MPMenuItem('About', 'About', '', handler=MPMenuChildMessageDialog(title="About MAVProxy", message=self.about_string()))])
 
@@ -94,7 +98,7 @@ class HelpModule(mp_module.MPModule):
         if args[0] == "about":
             print(self.about_string())
         elif args[0] == "site":
-            print("See http://ardupilot.github.io/MAVProxy/ for documentation")
+            print("See https://ardupilot.org/mavproxy/index.html for documentation")
         else:
             self.print_usage()
 
