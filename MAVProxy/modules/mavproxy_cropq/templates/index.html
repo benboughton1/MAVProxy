@@ -1,0 +1,40 @@
+<html>
+<head>
+    <title>CROPQ</title>
+    <link rel="stylesheet" href="/static/bootstrap.min.css">
+    <link href="/static/style.css" rel="stylesheet">
+</head>
+<body>
+<h1>{{text}}</h1>
+<button onclick="trigger()">Trigger</button>
+
+<nav class="navbar fixed-bottom navbar-expand-sm navbar-dark bg-dark">
+    <a class="navbar-brand" href="#">Cropquery</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse"
+            aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarCollapse">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item active">
+                <a class="nav-link nav-link-mod" href="#">Vehicle <span class="sr-only">(current)</span></a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link nav-link-mod" href="#">Dataset</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link nav-link-mod" href="#">Console</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+
+<script src="/static/socket.io.js"></script>
+
+
+<script src="/static/jquery-3.5.1.slim.min.js"></script>
+<script src="/static/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

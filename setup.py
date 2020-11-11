@@ -18,7 +18,11 @@ package_data = ['modules/mavproxy_map/data/*.jpg',
                 'modules/mavproxy_magical/data/*.obj',
                 'modules/mavproxy_fieldcheck/*.txt',
                 'tools/graphs/*.xml',
-]
+                'modules/mavproxy_cropq/templates/*',
+                'modules/mavproxy_cropq/static/*',
+                'modules/mavproxy_cropq/static/leaflet/*',
+                'modules/mavproxy_cropq/static/leaflet/images/*'
+                ]
 
 package_data.extend(package_files('MAVProxy/modules/mavproxy_cesium/app'))
 
@@ -42,7 +46,7 @@ if platform.system() == "Darwin":
 
 setup(name='MAVProxy',
       version=version,
-      zip_safe=True,
+      zip_safe=False,
       description='MAVProxy MAVLink ground station',
       long_description='''A MAVLink protocol proxy and ground station. MAVProxy
 is oriented towards command line operation, and is suitable for embedding in

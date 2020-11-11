@@ -18,9 +18,7 @@ import datetime
 import requests
 import threading
 
-
 from MAVProxy.modules.lib import mp_module
-
 
 from MAVProxy.modules.lib import mp_module
 from MAVProxy.modules.lib import mp_util
@@ -86,6 +84,7 @@ class ServerAlerts():
     """
     Capture vehicle alerts and report to API
     """
+
     def __init__(self, remote_self):
         self.active = []
         self.remote_self = remote_self
@@ -119,22 +118,28 @@ class ServerAlerts():
 
 
 class TextList():
-    def __init__(self):
+    def __init__(self, remote_self):
         self.text = []
+        self.remote_self = remote_self
 
     def add(self, line):
         line["time"] = datetime.datetime.utcnow().isoformat()
         self.text.append(line)
         # trim to 100 lines
         # self.text = self.text[-100:]
-
+        with self.remote_self.local_server.app.test_request_context('/'):
+            self.remote_self.local_server.socketio.emit(
+                'console',
+                line,
+                namespace='/ws'
+            )
 
 class RemoteConsole(textconsole.SimpleConsole):
     def __init__(self, remote_self):
         super().__init__()
-        self.stored_text = TextList()
         self.stored_values = {}
         self.remote_self = remote_self
+        self.stored_text = TextList(self.remote_self)
         self.server_alerts = ServerAlerts(self.remote_self)
 
     def write(self, text, fg='black', bg='white'):
@@ -158,7 +163,6 @@ class RemoteConsole(textconsole.SimpleConsole):
         self.stored_values[name] = {"text": text, "fg": fg, "bg": bg, "row": row}
 
 
-
 class CropqModule(mp_module.MPModule):
     def __init__(self, mpstate):
         """Initialise module"""
@@ -180,7 +184,6 @@ class CropqModule(mp_module.MPModule):
 
         # configure data collection
         self.data_col_profiles = {}
-
 
         self.datapoints = []
 
@@ -216,7 +219,7 @@ class CropqModule(mp_module.MPModule):
         if len(args) == 0:
             print(self.usage())
         elif args[0] == "load_config":
-            #try:
+            # try:
             with open(args[1]) as config_file:
                 config = json.load(config_file)
                 self.api_url = config['local']['api']['url']
@@ -230,7 +233,7 @@ class CropqModule(mp_module.MPModule):
                     print(f'Starting comm in {str(config["local"]["comm_pause_sec"])} seconds')
                     time.sleep(config['local']['comm_pause_sec'])
                     self.comm_start = True
-            #except Exception as e:
+            # except Exception as e:
             #    print('error loading config file', e)
         elif args[0] == "comm":
             comm()
@@ -377,7 +380,6 @@ class CropqModule(mp_module.MPModule):
                 self.update_direct_command(direct_command['id'], 1)
                 self.direct_command_queue.append(direct_command['id'])
 
-
     def direct_command_rover(self):
         direct_command_pk = self.direct_command_queue.pop()
         direct_command = self.direct_commands[direct_command_pk]
@@ -419,7 +421,7 @@ class CropqModule(mp_module.MPModule):
         # send comm at set interval
         if now - self.last_comm > self.comm_interval and self.comm_start:
             self.last_comm = now
-            x = threading.Thread(target=comm, args=(self, ))
+            x = threading.Thread(target=comm, args=(self,))
             x.start()
 
         # pop another job off the queue
@@ -439,10 +441,10 @@ class CropqModule(mp_module.MPModule):
                 profile['thread'] = True
                 profile['last_try'] = now
                 if profile['profile_name'] == 'em':
-                    y = threading.Thread(target=em_connect, args=(self, ))
+                    y = threading.Thread(target=em_connect, args=(self,))
                     y.start()
                 if profile['profile_name'] == 'rand':
-                    z = threading.Thread(target=rand_connect, args=(self, ))
+                    z = threading.Thread(target=rand_connect, args=(self,))
                     z.start()
 
     def mavlink_packet(self, m):
