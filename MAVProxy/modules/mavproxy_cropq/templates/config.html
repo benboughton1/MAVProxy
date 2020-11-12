@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Config{% endblock %}
+{% block head %}
+{{ super() }}
+{% endblock %}
+{% block content %}
+<h1>Config</h1>
+<div>
+    <form class="form-group" action="/update_config_json" method="post">
+        <label for="config_json">Config JSON</label>
+        <textarea class="form-control" rows="15"
+                  id="config_json" name="config_json"></textarea>
+        <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Submit</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block config_menu_item_class %}active{% endblock %}
+
+{% block menu_selection %}Config{% endblock %}
+
+{% block js %}
+{{ super() }}
+
+<script>
+    let config_json_text_area = document.getElementById("config_json");
+    populateConfigJson();
+
+    function populateConfigJson() {
+        getData('/config_json').then(data => {
+            config_json_text_area.value = JSON.stringify(data, undefined, 4);
+        })
+    }
+</script>
+
+{% endblock %}
