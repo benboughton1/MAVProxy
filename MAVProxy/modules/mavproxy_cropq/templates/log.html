@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Log{% endblock %}
+{% block head %}
+{{ super() }}
+{% endblock %}
+{% block content %}
+<table class="table" id="logTable">
+    <thead>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+{% endblock %}
+
+{% block log_menu_item_class %}active{% endblock %}
+
+{% block menu_selection %}Log{% endblock %}
+
+{% block js %}
+{{ super() }}
+
+<script>
+    updateLog();
+
+    function updateLog() {
+        getData('/log_data').then((data) => {
+            let table = document.getElementById("logTable");
+            table.innerHTML = "";
+
+            for (let log of data["data"]) {
+                var row = table.insertRow(0);
+                let cell1 = row.insertCell(0);
+                cell1.innerHTML = log
+            }
+
+            setTimeout(() => {
+                updateLog()
+            }, 5000)
+        })
+    }
+</script>
+
+{% endblock %}

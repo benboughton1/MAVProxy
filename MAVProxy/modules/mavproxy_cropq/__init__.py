@@ -127,12 +127,16 @@ class TextList():
         self.text.append(line)
         # trim to 100 lines
         # self.text = self.text[-100:]
+
+        '''
         with self.remote_self.local_server.app.test_request_context('/'):
             self.remote_self.local_server.socketio.emit(
                 'console',
                 line,
                 namespace='/ws'
-            )
+            )        
+        '''
+
 
 class RemoteConsole(textconsole.SimpleConsole):
     def __init__(self, remote_self):
@@ -171,6 +175,8 @@ class CropqModule(mp_module.MPModule):
         self.mpstate.console = RemoteConsole(self)
 
         # configure local webserver
+        self.config = None
+        self.config_file = None
         self.local_server = LocalServer(self)
         self.local_server.start()
 
@@ -183,6 +189,7 @@ class CropqModule(mp_module.MPModule):
         self.vehicle_server_id = None
 
         # configure data collection
+        self.allow_data_collection_threads = True
         self.data_col_profiles = {}
 
         self.datapoints = []
@@ -197,6 +204,8 @@ class CropqModule(mp_module.MPModule):
         self.io_text_sent = []
         self.params_last_sent = {}
         self.mpstats_last_sent = {}
+        self.heartbeats_latest_20 = []
+        self.comm_log_latest_100 = []
 
         self.direct_command_queue = []
         self.direct_commands = {}
@@ -214,27 +223,41 @@ class CropqModule(mp_module.MPModule):
         '''show help on command line options'''
         return "Usage: example <status|set>"
 
+    def load_config_file(self):
+        print('loading config file')
+        self.data_col_profiles = {}
+        self.datapoints = []
+        self.allow_data_collection_threads = False
+        time.sleep(2)
+        self.allow_data_collection_threads = True
+        with open(self.config_file) as config_file:
+            config = json.load(config_file)
+            self.config = config
+            self.api_url = config['local']['api']['url']
+            self.username = config['local']['api']['username']
+            self.password = config['local']['api']['password']
+            self.vehicle_server_id = int(config['local']['api']['vehicle_id'])
+            self.comm_interval = config['vehicle']['comm_interval_sec']
+            # data collection setup
+            self.data_collection_setup(config['vehicle']['data_collection'])
+            if config['local']['auto_comm_start']:
+                print(f'Starting comm in {str(config["local"]["comm_pause_sec"])} seconds')
+                time.sleep(config['local']['comm_pause_sec'])
+                self.comm_start = True
+        print('config file loaded')
+
     def cmd_cropq(self, args):
         '''control behaviour of the module'''
         if len(args) == 0:
             print(self.usage())
         elif args[0] == "load_config":
             # try:
-            with open(args[1]) as config_file:
-                config = json.load(config_file)
-                self.api_url = config['local']['api']['url']
-                self.username = config['local']['api']['username']
-                self.password = config['local']['api']['password']
-                self.vehicle_server_id = int(config['local']['api']['vehicle_id'])
-                self.comm_interval = config['vehicle']['comm_interval_sec']
-                # data collection setup
-                self.data_collection_setup(config['vehicle']['data_collection'])
-                if config['local']['auto_comm_start']:
-                    print(f'Starting comm in {str(config["local"]["comm_pause_sec"])} seconds')
-                    time.sleep(config['local']['comm_pause_sec'])
-                    self.comm_start = True
+            self.config_file = args[1]
+            self.load_config_file()
             # except Exception as e:
             #    print('error loading config file', e)
+        elif args[0] == "reload_config":
+            self.load_config_file()
         elif args[0] == "comm":
             comm()
             self.api_url = args[1]
@@ -446,6 +469,7 @@ class CropqModule(mp_module.MPModule):
                 if profile['profile_name'] == 'rand':
                     z = threading.Thread(target=rand_connect, args=(self,))
                     z.start()
+
 
     def mavlink_packet(self, m):
         '''handle mavlink packets'''

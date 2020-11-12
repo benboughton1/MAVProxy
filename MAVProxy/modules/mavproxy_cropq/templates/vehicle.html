@@ -1,11 +1,15 @@
 {% extends "base.html" %}
 {% block title %}Vehicle{% endblock %}
 {% block head %}
-    {{ super() }}
-    <link rel="stylesheet" href="/static/leaflet/leaflet.css"/>
+{{ super() }}
 {% endblock %}
 {% block content %}
-    <div id="map" style="min-width: 100%; height: 200px"></div>
+<table class="table" id="mpstatusTable">
+    <thead>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
 {% endblock %}
 
 {% block vehicle_menu_item_class %}active{% endblock %}
@@ -14,13 +18,33 @@
 
 {% block js %}
 
+{{ super() }}
+<script type="text/javascript" charset="utf-8">
+    updateStatus();
 
-    {{ super() }}
-    <script src="/static/leaflet/leaflet.js"></script>
+    function updateStatus() {
+        getData('/mpstatus').then((data) => {
+            let table = document.getElementById("mpstatusTable");
+            table.innerHTML = "";
 
-    <script>
-        var map = L.map('map').setView([51.505, -0.09], 13);
-        var marker = L.marker([51.5, -0.09]).addTo(map);
-    </script>
+            for (let key1 of Object.keys(data)) {
+                for (let key2 of Object.keys(data[key1])) {
+                    var row = table.insertRow(0);
+                    let cell1 = row.insertCell(0);
+                    let cell2 = row.insertCell(1);
+                    let cell3 = row.insertCell(2);
+                    cell1.innerHTML = key1;
+                    cell2.innerHTML = key2;
+                    cell2.innerHTML = data[key1][key2];
+
+                }
+            }
+
+            setTimeout(() => {
+                updateStatus()
+            }, 1000)
+        })
+    }
+</script>
 
 {% endblock %}

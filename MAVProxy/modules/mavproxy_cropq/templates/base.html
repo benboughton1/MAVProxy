@@ -18,6 +18,9 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarCollapse">
         <ul class="navbar-nav mr-auto">
+            <li class="nav-item {% block map_menu_item_class %}{% endblock %}">
+                <a class="nav-link nav-link-mod" href="/map">Map</a>
+            </li>
             <li class="nav-item {% block vehicle_menu_item_class %}{% endblock %}">
                 <a class="nav-link nav-link-mod" href="/vehicle">Vehicle</a>
             </li>
@@ -27,6 +30,12 @@
             <li class="nav-item {% block console_menu_item_class %}{% endblock %}">
                 <a class="nav-link nav-link-mod" href="/console">Console</a>
             </li>
+            <li class="nav-item {% block config_menu_item_class %}{% endblock %}">
+                <a class="nav-link nav-link-mod" href="/config">Config</a>
+            </li>
+            <li class="nav-item {% block log_menu_item_class %}{% endblock %}">
+                <a class="nav-link nav-link-mod" href="/log">Log</a>
+            </li>
         </ul>
     </div>
 </nav>
@@ -35,6 +44,41 @@
 <script src="/static/jquery-3.5.1.slim.min.js"></script>
 <script src="/static/bootstrap.bundle.min.js"></script>
 <script src="/static/socket.io.js"></script>
+<script>
+    async function getData(url = '') {
+        // Default options are marked with *
+        const response = await fetch(url, {
+            method: 'GET', // *GET, POST, PUT, DELETE, etc.
+            mode: 'cors', // no-cors, *cors, same-origin
+            cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+            credentials: 'same-origin', // include, *same-origin, omit
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            redirect: 'follow', // manual, *follow, error
+            referrerPolicy: 'no-referrer', // no-referrer, *client
+        });
+        return await response.json(); // parses JSON response into native JavaScript objects
+    }
+
+    async function postData(url = '', data = {}) {
+        // Default options are marked with *
+        const response = await fetch(url, {
+            method: 'POST', // *GET, POST, PUT, DELETE, etc.
+            mode: 'cors', // no-cors, *cors, same-origin
+            cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+            credentials: 'same-origin', // include, *same-origin, omit
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            redirect: 'follow', // manual, *follow, error
+            referrerPolicy: 'no-referrer', // no-referrer, *client
+            body: JSON.stringify(data) // body data type must match "Content-Type" header
+        });
+        return await response.json(); // parses JSON response into native JavaScript objects
+    }
+</script>
+
 {% endblock %}
 </body>
 </html>

@@ -5,10 +5,10 @@
 {% endblock %}
 {% block content %}
 <nav class="navbar navbar-light bg-light">
-  <form class="form-inline">
-    <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
-    <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
-  </form>
+    <form class="form-inline" action="/command" method="post">
+        <input class="form-control mr-sm-2" type="text" placeholder="Command" aria-label="Command" name="command" id="command" value="command">
+        <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Submit</button>
+    </form>
 </nav>
 
 <table class="table" id="consoleTable">
@@ -28,36 +28,22 @@
 
 
 <script type="text/javascript" charset="utf-8">
-    var socket = io('/ws');
-    socket.on('connect', function () {
-        socket.emit('my event', {data: 'I\'m connected!'});
-    });
-    let consoleNewLine = true;
-    socket.on('console', function (data) {
-        console.log('resp', data)
-        let table = document.getElementById("consoleTable");
-        //let row = table.insertRow(-1); // if we want at bottom
-        if (consoleNewLine) {
-            var row = table.insertRow(0);
-            let cell1 = row.insertCell(0);
-            let cell2 = row.insertCell(1);
-            cell2.innerHTML = data['text'];
-        } else {
-            var row = table.rows[0];
-            let existingHtml = row.cells[1].innerHTML
-            let newHtml = `${existingHtml} ${data['text']}`
-            console.log('newHtml', newHtml)
-            row.cells[1].innerHTML = newHtml;
-        }
-        let time = new Date(data['time']);
-        let dateLines = time.toISOString().split('T');
-        row.cells[0].innerHTML = `${dateLines[0]}<br>${dateLines[1]}`
-        consoleNewLine = data['text'].includes('\n');
-        //window.scrollTo(0,document.body.scrollHeight);
-    });
+    updateConsole();
 
-    function trigger() {
-        socket.emit('my_event', {data: '!!!'})
+    function updateConsole() {
+        getData('/console_data').then((data) => {
+            let table = document.getElementById("consoleTable");
+            table.innerHTML = "";
+            for (let line of data["data"]) {
+                var row = table.insertRow(0);
+                let cell1 = row.insertCell(0);
+                let cell2 = row.insertCell(1);
+                cell2.innerHTML = line['text'];
+            }
+            setTimeout(() => {
+                updateConsole()
+            }, 1000)
+        })
     }
 </script>
 

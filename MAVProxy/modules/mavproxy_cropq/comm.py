@@ -23,7 +23,7 @@ def comm(self):
             position = f'POINT({str(lon)} {str(lat)})'
             fix_type = status_dict['GPS_RAW_INT']['fix_type']
             sats_visible = status_dict['GPS_RAW_INT']['satellites_visible']
-            log.write(f'INFO -- comm to write -- {lat} {lon} {sats_visible}\n')
+            log.write(f'{datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")} INFO -- comm to write -- {lat} {lon} {sats_visible}\n')
         except Exception as e:
             lat = None
             lon = None
@@ -37,7 +37,7 @@ def comm(self):
             system_status = status_dict['HEARTBEAT']['system_status']
             custom_mode = status_dict['HEARTBEAT']['custom_mode']
         except Exception as e:
-            log.write(f'ERROR 2 -- comm -- {e}\n')
+            log.write(f'{datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")} ERROR 2 -- comm -- {e}\n')
             system_status = None
             custom_mode = None
             print(e)
@@ -48,7 +48,7 @@ def comm(self):
         except Exception as e:
             heading = None
             speed_kmh = None
-            log.write(f'ERROR 3 -- comm -- {e}\n')
+            log.write(f'{datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")} ERROR 3 -- comm -- {e}\n')
             print(e)
 
         text_to_save, text_to_send = self.console_text_to_send()
@@ -56,8 +56,6 @@ def comm(self):
         mpstats_to_send = self.mpstats_to_send()
 
         datapoints_freeze = json.loads(json.dumps(self.datapoints))
-
-        print('datapoints_freeze', datapoints_freeze)
 
         data = {
             "time_vehicle": datetime.datetime.utcnow().isoformat(),
@@ -76,6 +74,19 @@ def comm(self):
             "datapoints": datapoints_freeze
         }
 
+        data_small = {
+            "time_vehicle": datetime.datetime.utcnow().isoformat(),
+            "armed": self.is_armed(),
+            "position": position,
+            "heading": heading,
+            "speed": speed_kmh,
+            "fix_type": fix_type,
+            "sats_visible": sats_visible,
+            "datapoints": datapoints_freeze
+        }
+
+        self.heartbeats_latest_20 = [data_small] + self.heartbeats_latest_20
+        self.heartbeats_latest_20 = self.heartbeats_latest_20[:19]
         # print(data)
         try:
             r = requests.post(f'{self.api_url}/vehicles/{self.vehicle_server_id}/heartbeats/',
@@ -97,13 +108,13 @@ def comm(self):
                 # get new commands in response
                 response = r.json()
                 print(response)
-                log.write(f'INFO -- comm response -- {response}\n')
+                log.write(f'{datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")} INFO -- comm response -- {response}\n')
                 self.read_direct_commands(response['direct_commands'])
             else:
                 print(r.status_code, r.content)
-                log.write(f'INFO -- comm response -- bad response from server -- {r.status_code} {r.content}\n')
+                log.write(f'{datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")} INFO -- comm response -- bad response from server -- {r.status_code} {r.content}\n')
 
         except Exception as e:
-            log.write(f'ERROR 4 -- Caught making POST or dealing with response -- {e}\n')
+            log.write(f'{datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")} ERROR 4 -- Caught making POST or dealing with response -- {e}\n')
 
     return

@@ -1,13 +1,16 @@
 {% extends "base.html" %}
 {% block title %}Dataset{% endblock %}
 {% block head %}
-    {{ super() }}
+{{ super() }}
 {% endblock %}
 {% block content %}
-    <h1>Dataset</h1>
-    <p>
-      Welcome to dataset
-    </p>
+<table class="table" id="heartbeatTable">
+    <thead>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+
 {% endblock %}
 
 {% block dataset_menu_item_class %}active{% endblock %}
@@ -15,5 +18,44 @@
 {% block menu_selection %}Dataset{% endblock %}
 
 {% block js %}
-    {{ super() }}
+{{ super() }}
+
+<script>
+    updateHeartbeat();
+
+    function updateHeartbeat() {
+        getData('/heartbeats').then((data) => {
+            let table = document.getElementById("heartbeatTable");
+            table.innerHTML = "";
+
+            for (let heartbeat of data["data"]) {
+                for (let key of Object.keys(heartbeat)) {
+                    if (key === 'datapoints') {
+                        var row = table.insertRow(0);
+                        let cell1 = row.insertCell(0);
+                        let cell2 = row.insertCell(1);
+                        cell1.innerHTML = key;
+                        cell2.innerHTML = JSON.stringify(heartbeat[key]);
+                    } else {
+                        var row = table.insertRow(0);
+                        let cell1 = row.insertCell(0);
+                        let cell2 = row.insertCell(1);
+                        cell1.innerHTML = key;
+                        cell2.innerHTML = heartbeat[key];
+                    }
+
+                }
+                var row = table.insertRow(0);
+                let cell1 = row.insertCell(0);
+                let cell2 = row.insertCell(1);
+                cell1.innerHTML = '--'
+            }
+
+            setTimeout(() => {
+                updateHeartbeat()
+            }, 1000)
+        })
+    }
+</script>
+
 {% endblock %}
